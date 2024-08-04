@@ -5,22 +5,30 @@ import numpy as np
 from daw.constants import Note
 from daw.waves.basic import sin, sawtooth
 from daw.waves.utils import compile
+from daw.waves.time import TIME
 from daw.sound import play, save
 
-x = sin(Note.C5, amplitude=0.2)
-y = sin(Note.E5, amplitude=0.2)
-z = sin(Note.G5, amplitude=0.2)
-c_major = x + y + z
-c_major_audio = compile(c_major, duration=1)
+w1 = sawtooth(0.4, amplitude=0.2)
+w2 = sawtooth(0.4, amplitude=0.2, time=TIME+1)
+w3 = sawtooth(0.4, amplitude=0.2, time=TIME+2)
+w4 = sawtooth(0.4, amplitude=0.2, time=TIME+3)
+
+x = sin(Note.C5, amplitude=w1)
+y = sin(Note.E5, amplitude=w2)
+z = sin(Note.G5, amplitude=w3)
+n = sin(Note.C6, amplitude=w4)
+
+chord = x + y + z + n
+chord_audio = compile(chord, duration=10)
 
 chromatic_wave = []
 for note in Note:
-    new_wave = compile(sin(note), duration=0.05)
+    new_wave = compile(sin(note), duration=0.02)
     chromatic_wave.append(new_wave)
 
 audio = np.concatenate(chromatic_wave)
 audio += audio[::-1]
-audio = np.concatenate([c_major_audio, audio])
+audio = np.concatenate([chord_audio, audio])
 
 play(audio)
 save(audio, 'audio.wav')
