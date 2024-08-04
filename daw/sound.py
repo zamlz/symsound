@@ -1,13 +1,11 @@
 import numpy as np
 import sounddevice as sd
 import soundfile as sf
-import sympy as sp
 
 from daw.constants import DEFAULT_SAMPLE_RATE
-from daw.waves import AbstractWaveFunction
 
 
-def play_audio(
+def play(
         compiled_wave: np.ndarray,
         sample_rate=DEFAULT_SAMPLE_RATE
 ) -> None:
@@ -15,7 +13,7 @@ def play_audio(
     sd.wait()
 
 
-def save_audio(
+def save(
         compiled_wave: np.ndarray,
         output_file: str,
         sample_rate=DEFAULT_SAMPLE_RATE
