@@ -1,21 +1,22 @@
 import numpy as np
 
 from daw.constants import Note
-from daw.waves import sine_wave, sawtooth_wave
-from daw.sound import play_wave, compile_wave, save_compiled_wave
+from daw.waves import SineWave, SawtoothWave
+from daw.sound import play_audio, save_audio
 
-x = sine_wave(Note.C5)
-y = sine_wave(Note.E5)
-z = sine_wave(Note.G5)
-
+x = SineWave(Note.C5, amplitude=0.2)
+y = SineWave(Note.E5, amplitude=0.2)
+z = SineWave(Note.G5, amplitude=0.2)
 c_major = x + y + z
-# play_wave(c_major, 1)
 
-wave_collection = [compile_wave(c_major, 1)]
+wave_collection = []
 for note in Note:
-    new_wave = sine_wave(note)
-    # play_wave(new_wave, 0.1)
-    wave_collection.append(compile_wave(new_wave, 0.05))
+    new_wave = SineWave(note).compile(duration=0.05)
+    wave_collection.append(new_wave)
 
 sequenced_wave = np.concatenate(wave_collection)
-save_compiled_wave(sequenced_wave, 'song.wav')
+sequenced_wave += sequenced_wave[::-1]
+sequenced_wave = np.concatenate([c_major.compile(duration=1), sequenced_wave])
+
+play_audio(sequenced_wave)
+save_audio(sequenced_wave, 'song.wav')

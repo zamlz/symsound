@@ -1,16 +1,12 @@
 from enum import Enum
 
-from sympy import symbols
-
 
 DEFAULT_SAMPLE_RATE = 44100
 
 
-time = symbols('time')
-
-
 class FloatEnum(float, Enum):
     pass
+
 
 # TODO: Double check all the frequencies
 class Note(FloatEnum):
