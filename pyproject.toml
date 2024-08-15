@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "daw"
+dynamic = ["version"]
+requires-python = ">= 3.11"
+description = "A mathematical and programmatic audio engine"
+authors = [
+    { name = "Amlesh Sivanantham", email = "zamlz+publict@pm.me" }
+]
+dependencies = [
+  "matplotlib"
+  "numpy",
+  "sounddevice",
+  "soundfile",
+  "sympy"
+]
+
+[project.optional-dependencies]
+develop = [
+  "ipdb",
+  "ipython",
+  "mypy"
+]
+
+[[tool.mypy.overrides]]
+module = [
+  "sounddevice",
+  "soundfile"
+]
