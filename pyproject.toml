@@ -11,7 +11,7 @@ authors = [
     { name = "Amlesh Sivanantham", email = "zamlz+publict@pm.me" }
 ]
 dependencies = [
-  "matplotlib"
+  "matplotlib",
   "numpy",
   "sounddevice",
   "soundfile",
@@ -28,5 +28,7 @@ develop = [
 [[tool.mypy.overrides]]
 module = [
   "sounddevice",
-  "soundfile"
+  "soundfile",
+  "sympy"
 ]
+ignore_missing_imports = true
