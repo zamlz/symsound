@@ -17,6 +17,8 @@
     in {
       default = pkgs.mkShell {
         packages = with pkgs; [
+          # FIXME: Is there a better way to get the packages from the
+          # pyproject.toml file without redefining them here?
           python311Packages.ipdb
           python311Packages.ipython
           python311Packages.matplotlib
