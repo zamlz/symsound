@@ -23,6 +23,6 @@ def weighted_blend(w1, w2, blend_duration, sharpness=1):
 
 w1 = square(frequency=440)
 w2 = 0.5*sine(frequency=440)
-w = weighted_blend(w1, w2, 1, 3)
+w = weighted_blend(w1, w2, 1, 1)
 
 play(compile(w, 3))
