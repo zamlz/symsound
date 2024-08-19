@@ -10,9 +10,17 @@ from daw.constants import DEFAULT_SAMPLE_RATE, Note
 from daw.waves.time import TIME
 
 
+WHITE_NOISE = sp.Symbol('white_noise')
+
+
 def linspace(duration: float, sample_rate: int) -> npt.ArrayLike:
     divisions = int(sample_rate * duration)
     return np.linspace(0, duration, divisions, endpoint=False)
+
+
+def white_noise(duration: float, sample_rate: int) -> npt.ArrayLike:
+    num_samples = duration * sample_rate
+    return np.random.uniform(-0.5, 0.5, num_samples)
 
 
 def compile(
@@ -20,8 +28,11 @@ def compile(
         duration: float, 
         sample_rate: int = DEFAULT_SAMPLE_RATE
 ) -> npt.ArrayLike:
-    equation = sp.lambdify(TIME, wave_function, "numpy")
-    return equation(linspace(duration, sample_rate))
+    equation = sp.lambdify((TIME, WHITE_NOISE), wave_function, "numpy")
+    return equation(
+        linspace(duration, sample_rate),
+        white_noise(duration, sample_rate)
+    )
 
 
 def plot_signal(
