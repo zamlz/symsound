@@ -24,6 +24,7 @@
           python311Packages.matplotlib
           python311Packages.mypy
           python311Packages.numpy
+          python311Packages.scipy
           python311Packages.sounddevice
           python311Packages.soundfile
           python311Packages.sympy
