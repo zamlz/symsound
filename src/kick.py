@@ -26,6 +26,6 @@ stutter = square(stutter_lfo) + 0.5
 saw = 0.1*sawtooth(1000, amplitude=saw_beat) * stutter
 
 w = kick + hat + saw
-plot_signal(w, 30)
-# play(compile(w, 30))
+
+play(compile(w, 10))
 save(compile(w, 30), "beat.wav")

@@ -9,8 +9,11 @@ def play(
         compiled_wave: npt.ArrayLike,
         sample_rate: int = DEFAULT_SAMPLE_RATE
 ) -> None:
-    sd.play(compiled_wave, samplerate=sample_rate)
-    sd.wait()
+    try:
+        sd.play(compiled_wave, samplerate=sample_rate)
+        sd.wait()
+    except KeyboardInterrupt:
+        pass
 
 
 def save(
