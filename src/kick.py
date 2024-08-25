@@ -7,7 +7,7 @@ from daw.waves.time import BPM, TIME
 
 # w = sine(440) + sine(480)
 
-bpm = BPM(150)
+bpm = BPM(140)
 
 kick_frequency = bpm.frequency(1)
 kick_time_shift = TIME + bpm.time(0.5)
