@@ -1,4 +1,4 @@
-from typing import Union
+from typing import List, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -37,17 +37,20 @@ def compile(
     )
 
 
-def plot_signal(
-    wave_function: Expr,
+def plot(
+    wave_functions: Union[Expr, List[Expr]],
     duration: float = 1,
     sample_rate: int = DEFAULT_SAMPLE_RATE
 ) -> None:
-    time = linspace(duration, sample_rate)
-    signal = compile(wave_function, duration, sample_rate)
+    if not isinstance(wave_functions, list):
+        wave_functions = [wave_functions]
     plt.figure(figsize=(10, 4))
-    plt.plot(time, signal)
     plt.title('Signal Plot')
     plt.xlabel('Time [s]')
     plt.ylabel('Amplitude')
-    plt.grid(True)
+    for wave_function in wave_functions:
+        time = linspace(duration, sample_rate)
+        signal = compile(wave_function, duration, sample_rate)
+        plt.plot(time, signal)
+        plt.grid(True)
     plt.show()  
