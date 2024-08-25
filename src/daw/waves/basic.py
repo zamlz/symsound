@@ -9,7 +9,7 @@ from daw.waves.time import TIME
 
 def sine(
         frequency: Union[Expr, float] = Note.A4,
-        amplitude: Union[Expr, float] = 0.5,
+        amplitude: Union[Expr, float] = 1.0,
         time_shift: Union[Expr, float] = TIME,
 ) -> Expr:
     phase = sp.integrate(frequency, TIME).subs(TIME, time_shift)
@@ -18,7 +18,7 @@ def sine(
 
 def square(
         frequency: Union[Expr, float, int] = Note.A4,
-        amplitude: Union[Expr, float, int] = 0.5,
+        amplitude: Union[Expr, float, int] = 1.0,
         time_shift: Union[Expr, float] = TIME,
 ) -> Expr:
     phase = sp.integrate(frequency, TIME).subs(TIME, time_shift)
@@ -27,7 +27,7 @@ def square(
 
 def triangle(
         frequency: Union[Expr, float, int] = Note.A4,
-        amplitude: Union[Expr, float, int] = 0.5,
+        amplitude: Union[Expr, float, int] = 1.0,
         time_shift: Union[Expr, float] = TIME,
 ) -> Expr:
     phase = sp.integrate(frequency, TIME).subs(TIME, time_shift)
@@ -36,7 +36,7 @@ def triangle(
 
 def sawtooth(
         frequency: Union[Expr, float, int] = Note.A4,
-        amplitude: Union[Expr, float, int] = 0.5,
+        amplitude: Union[Expr, float, int] = 1.0,
         time_shift: Union[Expr, float] = TIME,
 ) -> Expr:
     phase = sp.integrate(frequency, TIME).subs(TIME, time_shift)

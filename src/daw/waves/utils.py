@@ -22,7 +22,7 @@ def linspace(duration: float, sample_rate: int) -> npt.ArrayLike:
 # it at compilation?
 def white_noise(duration: float, sample_rate: int) -> npt.ArrayLike:
     num_samples = int(duration * sample_rate)
-    return np.random.uniform(-0.5, 0.5, num_samples)
+    return np.random.uniform(-1.0, 1.0, num_samples)
 
 
 def compile(
