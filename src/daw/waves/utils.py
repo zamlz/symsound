@@ -18,6 +18,8 @@ def linspace(duration: float, sample_rate: int) -> npt.ArrayLike:
     return np.linspace(0, duration, divisions, endpoint=False)
 
 
+# FIXME: Is there a better way to create white noise than to just inject
+# it at compilation?
 def white_noise(duration: float, sample_rate: int) -> npt.ArrayLike:
     num_samples = duration * sample_rate
     return np.random.uniform(-0.5, 0.5, num_samples)
