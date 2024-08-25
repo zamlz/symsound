@@ -4,14 +4,14 @@ import numpy as np
 
 from daw.constants import Note
 from daw.waves.basic import sine, sawtooth, square, triangle
-from daw.waves.utils import compile, plot_signal
+from daw.waves.utils import compile, plot
 from daw.waves.time import TIME
 from daw.sound import play, save
 
 w1 = triangle(1, amplitude=0.2)
-w2 = triangle(1, amplitude=0.2, time_shift=TIME+0.25)
-w3 = triangle(1, amplitude=0.2, time_shift=TIME+0.5)
-w4 = triangle(1, amplitude=0.2, time_shift=TIME+0.75)
+w2 = triangle(1, amplitude=0.2, time_shift=TIME+0.15)
+w3 = triangle(1, amplitude=0.2, time_shift=TIME+0.30)
+w4 = triangle(1, amplitude=0.2, time_shift=TIME+0.45)
 
 x = sine(Note.C5, amplitude=w1)
 y = sine(Note.E5, amplitude=w2)
@@ -22,4 +22,4 @@ chord = x + y + z + n
 audio = compile(chord, duration=5)
 
 play(audio)
-plot_signal(chord)
+#plot(chord)

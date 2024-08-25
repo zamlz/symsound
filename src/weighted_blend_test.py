@@ -6,7 +6,7 @@ import sympy as sp
 from daw.constants import Note
 from daw.envelope import adsr_envelope
 from daw.waves.basic import sine, sawtooth, square, triangle
-from daw.waves.utils import compile, plot_signal
+from daw.waves.utils import compile, plot
 from daw.waves.time import TIME
 from daw.sound import play, save
 
