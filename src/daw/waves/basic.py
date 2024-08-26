@@ -41,3 +41,12 @@ def sawtooth(
 ) -> Expr:
     phase = sp.integrate(frequency, TIME).subs(TIME, time_shift)
     return amplitude * 2 * (phase - sp.floor(phase + 0.5))
+
+
+def trigger(
+    trigger_time: Union[Expr, float, int] = 1.0,
+) -> Expr:
+    return sp.Piecewise(
+        (0.0, TIME < trigger_time),
+        (1.0, TIME >= trigger_time)
+    )

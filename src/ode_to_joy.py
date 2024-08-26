@@ -1,44 +1,103 @@
 #!/usr/bin/env python3
 
+from collections import defaultdict
+
 import numpy as np
 import sympy as sp
 
 from daw.constants import Note
-from daw.envelope import adsr_envelope
-from daw.waves.basic import sine, sawtooth, square, triangle
+from daw.envelope import ACTIVE_DURATION, adsr_envelope
+from daw.waves.basic import sine, sawtooth, square, triangle, trigger
 from daw.waves.utils import compile, plot
-from daw.waves.time import TIME
+from daw.waves.time import BPM, TIME
 from daw.sound import play, save
 
-ode_to_joy = [
-    (Note.FS4, 1),
-    (Note.FS4, 1),
-    (Note.G4, 1),
-    (Note.A4, 1),
-    (Note.A4, 1),
-    (Note.G4, 1),
-    (Note.FS4, 1),
-    (Note.E4, 1),
-    (Note.D4, 1),
-    (Note.D4, 1),
-    (Note.E4, 1),
-    (Note.FS4, 1),
-    (Note.FS4, 1.5),
-    (Note.E4, .5),
-    (Note.E4, 1),
+ode_to_joy_notes = [
+    (Note.FS4, 0.5),
+    (None, 0.5),
+    (Note.FS4, 0.5),
+    (None, 0.5),
+    (Note.G4, 0.5),
+    (None, 0.5),
+    (Note.A4, 0.5),
+    (None, 0.5),
+    (Note.A4, 0.5),
+    (None, 0.5),
+    (Note.G4, 0.5),
+    (None, 0.5),
+    (Note.FS4, 0.5),
+    (None, 0.5),
+    (Note.E4, 0.5),
+    (None, 0.5),
+    (Note.D4, 0.5),
+    (None, 0.5),
+    (Note.D4, 0.5),
+    (None, 0.5),
+    (Note.E4, 0.5),
+    (None, 0.5),
+    (Note.FS4, 0.5),
+    (None, 0.5),
+    (Note.FS4, 0.5),
+    (None, 1.0),
+    (Note.E4, 0.5),
+    (Note.E4, 0.5),
+    (None, 1.5),
+    (Note.FS4, 0.5),
+    (None, 0.5),
+    (Note.FS4, 0.5),
+    (None, 0.5),
+    (Note.G4, 0.5),
+    (None, 0.5),
+    (Note.A4, 0.5),
+    (None, 0.5),
+    (Note.A4, 0.5),
+    (None, 0.5),
+    (Note.G4, 0.5),
+    (None, 0.5),
+    (Note.FS4, 0.5),
+    (None, 0.5),
+    (Note.E4, 0.5),
+    (None, 0.5),
+    (Note.D4, 0.5),
+    (None, 0.5),
+    (Note.D4, 0.5),
+    (None, 0.5),
+    (Note.E4, 0.5),
+    (None, 0.5),
+    (Note.FS4, 0.5),
+    (None, 0.5),
+    (Note.E4, 0.5),
+    (None, 1.0),
+    (Note.D4, 0.5),
+    (Note.D4, 0.5),
+    (None, 0.5),
 ]
 
 def get_duration(notes):
     return sum(d for _, d in notes)
 
 def wave(note):
-    a = sine(4 * (note / Note.FS4), amplitude=(0.5 * (note / Note.FS4)))
-    x = sine(note, amplitude=.5) * adsr_envelope(.2, .2, 0.5, .2, .5)
+    vibrato = 20*sine(bpm.frequency(10))*sine(bpm.frequency(1))
+    x = sine(note + vibrato) * adsr_envelope(.1, .1, 0.5, .1)
     return x
 
-BPM = 120
-bpm = lambda x: x * (60 / BPM)
+bpm = BPM(160)
 
-audio = [compile(wave(note), bpm(duration)) for note, duration in ode_to_joy]
-audio = np.concatenate(audio)
-play(audio)
+beat = 0
+ode_to_joy = 0
+poly = False
+
+for note, duration in ode_to_joy_notes:
+    if note is not None:
+        if poly:
+            ode_to_joy *= (1 - trigger(bpm.time(beat)))
+        ode_to_joy += wave(note).subs(
+            ACTIVE_DURATION,
+            bpm.time(duration)
+        ).subs(
+            TIME,
+            TIME - bpm.time(beat)
+        )
+    beat += duration
+
+play(compile(ode_to_joy, bpm.time(beat)))

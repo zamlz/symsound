@@ -6,14 +6,16 @@ from sympy.core.expr import Expr
 from daw.waves.time import TIME
 
 
+ACTIVE_DURATION = sp.Symbol('active_duration')
+
+
 def adsr_envelope(
         attack: float,
         decay: float,
         sustain: float,
         release: float,
-        active: float = 100000,
 ) -> Expr:
-    if attack < 0 or decay < 0 or sustain < 0 or release < 0 or active < 0:
+    if attack < 0 or decay < 0 or sustain < 0 or release < 0:
         raise Exception("Invalid paramter value (less than zero)")
 
     if attack > 0.0:
@@ -28,21 +30,22 @@ def adsr_envelope(
         decay_func = sustain
 
     attack_to_sustain_func = sp.Piecewise(
-        (attack_func, TIME <= attack),
+        (0.0, TIME < 0),
+        (attack_func, sp.And(TIME >= 0, TIME <= attack)),
         (decay_func, sp.And(TIME > attack, TIME <= (attack + decay))),
         (sustain, TIME > (attack + decay))
     )
 
     if release > 0.0:
-        env_at_release = attack_to_sustain_func.subs(TIME, active)
+        env_at_release = attack_to_sustain_func.subs(TIME, ACTIVE_DURATION)
         release_slope = -1 * env_at_release / release
-        release_func = release_slope * (TIME - active - release)
+        release_func = release_slope * (TIME - ACTIVE_DURATION - release)
     else:
         release_func = 0.0
 
     env_piecewise = sp.Piecewise(
-        (attack_to_sustain_func, TIME <= active),
-        (release_func, sp.And(TIME > active, TIME <= (active + release))),
-        (0.0, TIME > (active + release))
+        (attack_to_sustain_func, TIME <= ACTIVE_DURATION),
+        (release_func, sp.And(TIME > ACTIVE_DURATION, TIME <= (ACTIVE_DURATION + release))),
+        (0.0, TIME > (ACTIVE_DURATION + release))
     )
     return env_piecewise
