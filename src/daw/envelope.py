@@ -6,7 +6,7 @@ from sympy.core.expr import Expr
 from daw.waves.time import TIME
 
 
-ACTIVE_DURATION = sp.Symbol('active_duration')
+ACTIVE_DURATION = sp.symbols('active_duration')
 
 
 def adsr_envelope(

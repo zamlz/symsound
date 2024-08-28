@@ -12,7 +12,7 @@ from daw.constants import DEFAULT_SAMPLE_RATE, Note
 from daw.waves.time import BPM, TIME
 
 
-WHITE_NOISE = sp.Symbol('white_noise')
+WHITE_NOISE = sp.symbols('white_noise', real=True)
 
 
 def linspace(duration: float, sample_rate: int) -> npt.ArrayLike:

@@ -4,10 +4,7 @@ import sympy as sp
 
 
 # Global shared unified time symbol
-TIME = sp.symbols('time')
-
-# FIXME: Why is this here? Should be moved to a proper location
-RANDOM = sp.symbols('random')
+TIME = sp.symbols('time', real=True, positive=True)
 
 
 # Beats per Minute
