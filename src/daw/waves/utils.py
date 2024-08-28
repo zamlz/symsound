@@ -3,6 +3,8 @@ from typing import List, Optional, Union
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
+import sounddevice as sd
+import soundfile as sf
 import sympy as sp
 from sympy.core.expr import Expr
 
@@ -35,6 +37,29 @@ def compile(
         linspace(duration, sample_rate),
         white_noise(duration, sample_rate)
     )
+
+
+def play(
+    wave_function: Expr,
+    duration: float = 1.0,
+    sample_rate: int = DEFAULT_SAMPLE_RATE
+) -> None:
+    compiled_wave = compile(wave_function, duration, sample_rate)
+    try:
+        sd.play(compiled_wave, samplerate=sample_rate)
+        sd.wait()
+    except KeyboardInterrupt:
+        pass
+
+
+def save(
+    wave_function: Expr,
+    duration: float,
+    output_file: str,
+    sample_rate: int = DEFAULT_SAMPLE_RATE
+) -> None:
+    compiled_wave = compile(wave_function, duration, sample_rate)
+    sf.write(output_file, compiled_wave, sample_rate)
 
 
 def plot(
