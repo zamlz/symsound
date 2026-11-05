@@ -51,6 +51,6 @@ def trigger(
     trigger_time: Expr | float | int = 1.0,
 ) -> Expr:
     return sp.Piecewise(
-        (0.0, trigger_time > TIME),
-        (1.0, trigger_time <= TIME)
+        (0.0, TIME < trigger_time),
+        (1.0, TIME >= trigger_time)
     )
