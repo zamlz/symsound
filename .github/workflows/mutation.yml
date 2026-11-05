@@ -1,0 +1,26 @@
+name: mutation
+
+on:
+  workflow_dispatch:
+    inputs:
+      filters:
+        description: "Only run mutants whose label contains one of these words (blank runs all)"
+        required: false
+        default: ""
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+      - run: |
+          # shellcheck disable=SC2086
+          # (the filters are separate words on purpose)
+          nix develop -c python tools/mutation_check.py $FILTERS
+        env:
+          FILTERS: ${{ inputs.filters }}
