@@ -1,5 +1,17 @@
 # daw
 
+> ./examples/kick.py # the dry signal equation ->
+$$
+\begin{aligned}
+d(t) ={}& \left(\left\lfloor \tfrac{7t}{3} + 1 \right\rfloor - \tfrac{7t}{3}\right)^{1/2} \sin(80\pi t) \\
+&+ 0.25 \left(\left\lfloor \tfrac{7t}{3} + \tfrac{3}{2} \right\rfloor - \tfrac{7t}{3} - \tfrac{1}{2}\right)^{20} n(t) \\
+&+ 0.2 \left(\left\lfloor \tfrac{7t}{12} + \tfrac{3}{2} \right\rfloor - \tfrac{7t}{12} - \tfrac{1}{2}\right)^{9}
+\bigl(1000t - \lfloor 1000t + \tfrac{1}{2} \rfloor\bigr)
+\left(\mathrm{sgn}\sin\!\Bigl(2\pi\bigl(12.5\,t - \tfrac{36}{7\pi}\cos\tfrac{7\pi t}{6}\bigr)\Bigr) + 1\right)
+\end{aligned}
+$$
+> where $n(t) \sim U(-1, 1)$ is white noise, a new random value at every sample.
+
 A mathematical and programmatic audio engine. Signals are
 [SymPy](https://www.sympy.org) expressions of a single shared time symbol,
 `daw.waves.time.TIME`. Oscillators, envelopes, LFOs and time shifts are all
@@ -23,24 +35,6 @@ play(sine(440), duration=2.0)
 Frequencies may themselves be expressions (e.g. `sine(440 + 5 * sine(6))`).
 The phase is obtained by integrating the frequency over `TIME`, so frequency
 modulation stays correct.
-
-## The beat in `examples/kick.py` as math
-
-Everything is an expression of time, so the dry beat (kick, hat and stuttering
-saw, at 140 BPM) is one formula. The first and last third of `kick.py` are
-exactly this signal; the middle third adds the low-pass sweep.
-
-$$
-\begin{aligned}
-d(t) ={}& \left(\left\lfloor \tfrac{7t}{3} + 1 \right\rfloor - \tfrac{7t}{3}\right)^{1/2} \sin(80\pi t) \\
-&+ 0.25 \left(\left\lfloor \tfrac{7t}{3} + \tfrac{3}{2} \right\rfloor - \tfrac{7t}{3} - \tfrac{1}{2}\right)^{20} n(t) \\
-&+ 0.2 \left(\left\lfloor \tfrac{7t}{12} + \tfrac{3}{2} \right\rfloor - \tfrac{7t}{12} - \tfrac{1}{2}\right)^{9}
-\bigl(1000t - \lfloor 1000t + \tfrac{1}{2} \rfloor\bigr)
-\left(\mathrm{sgn}\sin\!\Bigl(2\pi\bigl(12.5\,t - \tfrac{36}{7\pi}\cos\tfrac{7\pi t}{6}\bigr)\Bigr) + 1\right)
-\end{aligned}
-$$
-
-where $n(t) \sim U(-1, 1)$ is white noise, a new random value at every sample.
 
 ## Documentation
 
