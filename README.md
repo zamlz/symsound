@@ -24,6 +24,11 @@ Frequencies may themselves be expressions (e.g. `sine(440 + 5 * sine(6))`).
 The phase is obtained by integrating the frequency over `TIME`, so frequency
 modulation stays correct.
 
+## Documentation
+
+See [docs/](docs/README.md) for how to use each piece, with a line-by-line
+walkthrough of `examples/kick.py`.
+
 ## Layout
 
 | Path | Contents |
@@ -34,6 +39,7 @@ modulation stays correct.
 | `src/daw/waves/utils.py` | `compile`, `play`, `save`, `plot`, `WHITE_NOISE` |
 | `src/daw/envelope.py` | `adsr_envelope` and the `ACTIVE_DURATION` symbol |
 | `src/daw/filters.py` | First-order low-pass filter, applied on the sample grid |
+| `docs/` | How to use the library (tested like code) |
 | `examples/` | Example scripts (`kick.py`, `ode_to_joy.py`, ...) |
 | `tests/` | Pytest suite, golden files and guard tests |
 | `tools/` | `mutation_check.py`, which proves the tests catch bugs |

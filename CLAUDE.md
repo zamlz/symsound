@@ -8,6 +8,9 @@ how we test, lint and commit. The short version:
   edge cases, and (for sound) measurements of the audio. A smoke test is not
   enough. The per-feature checklists are in `guidelines.md` section 5.
 - A fixed bug gets a regression test that fails without the fix.
+- New public functions and classes need a section in `docs/` with a runnable
+  example (`tests/test_docs.py` enforces it). Changing `examples/kick.py`
+  means updating `docs/kick-walkthrough.md`.
 - Run everything with `nix flake check`; iterate with `nix develop -c pytest`.
   Coverage of `src/daw` must stay at 100% (line and branch).
 - Run `nix develop -c python tools/mutation_check.py` after changing core logic.

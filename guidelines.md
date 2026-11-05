@@ -39,6 +39,11 @@ A change is done only when **all** of these hold:
       file ([section 8](#8-golden-files)).
 - [ ] The README and this document are updated if behavior, commands or
       conventions changed.
+- [ ] Every new public function or class is explained in `docs/` for someone
+      who wants to *use* it, with a runnable example. `tests/test_docs.py`
+      runs every `python` block in `docs/` and fails on an undocumented public
+      name. If you change `examples/kick.py`, update
+      `docs/kick-walkthrough.md`; the test requires it to quote the file.
 - [ ] Nothing was validated only by "it ran". If it makes sound, the test
       measures the sound (peak level, pitch, silence where there should be
       silence, length), see [section 4](#4-how-we-test).
@@ -88,6 +93,7 @@ src/daw/               the library
   waves/time.py        TIME symbol, BPM
   waves/utils.py       linspace, white_noise, compile, play, save, plot
 examples/              runnable scripts; also our acceptance tests
+docs/                  user documentation; every python block is tested
 tests/
   conftest.py          fixtures, Hypothesis profiles
   helpers.py           evaluate() and independent reference implementations
@@ -95,6 +101,7 @@ tests/
   golden/*.npy         fingerprints of what the examples sound like
   test_*.py            one file per area (see below)
   test_policy.py       guards that enforce this document
+  test_docs.py         runs the docs' code and checks they cover the API
 tools/mutation_check.py  deliberately breaks the code to prove tests notice
 ```
 
