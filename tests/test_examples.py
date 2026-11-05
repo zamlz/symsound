@@ -15,6 +15,7 @@ import soundfile as sf
 from daw.constants import DEFAULT_SAMPLE_RATE, Note
 from daw.waves.utils import compile
 from golden import check_golden
+from helpers import evaluate
 
 pytestmark = pytest.mark.slow
 
@@ -85,6 +86,112 @@ def test_kick_writes_its_wav_file(fake_sounddevice, tmp_path, monkeypatch):
     assert info.samplerate == DEFAULT_SAMPLE_RATE
     assert info.frames == 30 * DEFAULT_SAMPLE_RATE
     assert info.channels == 1
+
+
+@pytest.fixture(scope="module")
+def kick(tmp_path_factory):
+    mp = pytest.MonkeyPatch()
+    try:
+        mp.setitem(sys.modules, "sounddevice", _SilentSoundDevice)
+        mp.chdir(tmp_path_factory.mktemp("kick"))
+        np.random.seed(0)
+        ns = runpy.run_path(str(EXAMPLES / "kick.py"), run_name="__main__")
+    finally:
+        mp.undo()
+    t = np.arange(30 * DEFAULT_SAMPLE_RATE) / DEFAULT_SAMPLE_RATE
+    noise = np.random.default_rng(0).uniform(-1, 1, len(t))
+    return {
+        "ns": ns,
+        "t": t,
+        "dry": evaluate(ns["dry"], t, noise),
+        "wet": evaluate(ns["w"], t, noise),
+    }
+
+
+class TestKickFilterSweep:
+    """kick.py is 30 s: dry for 10 s, a low-pass sweep for 10 s, dry again"""
+
+    SR = DEFAULT_SAMPLE_RATE
+
+    def band_power(self, signal, start, stop, low_hz):
+        """Power above low_hz in the seconds [start, stop)"""
+        chunk = signal[int(start * self.SR) : int(stop * self.SR)]
+        spectrum = np.abs(np.fft.rfft(chunk)) ** 2
+        freqs = np.fft.rfftfreq(len(chunk), 1 / self.SR)
+        return spectrum[freqs > low_hz].sum()
+
+    def treble_ratio(self, kick, start, stop):
+        return self.band_power(kick["wet"], start, stop, 2000) / self.band_power(
+            kick["dry"], start, stop, 2000
+        )
+
+    def test_is_thirty_seconds_long(self, kick):
+        assert len(kick["wet"]) == 30 * self.SR
+
+    def test_first_and_last_thirds_are_exactly_unfiltered(self, kick):
+        diff = np.abs(kick["wet"] - kick["dry"])
+        assert diff[: 10 * self.SR].max() == 0.0
+        assert diff[20 * self.SR :].max() == pytest.approx(0.0, abs=1e-12)
+
+    def test_the_middle_third_is_filtered(self, kick):
+        diff = np.abs(kick["wet"] - kick["dry"])[10 * self.SR : 20 * self.SR]
+        assert diff.max() > 0.05
+
+    def test_treble_falls_to_almost_nothing_at_the_centre(self, kick):
+        assert self.treble_ratio(kick, 14, 16) < 0.01
+
+    def test_treble_is_untouched_outside_the_sweep(self, kick):
+        for start, stop in [(0, 10), (20, 30)]:
+            assert self.treble_ratio(kick, start, stop) == pytest.approx(1.0)
+
+    def test_the_sweep_closes_progressively_then_reopens(self, kick):
+        ratios = [self.treble_ratio(kick, s, s + 1) for s in range(10, 20)]
+        centre = int(np.argmin(ratios))
+        assert centre in (4, 5)
+        closing, opening = ratios[: centre + 1], ratios[centre:]
+        assert closing == sorted(closing, reverse=True)
+        assert opening == sorted(opening)
+        assert ratios[0] > 0.5
+        assert ratios[-1] > 0.5
+
+    def test_the_sweep_is_symmetric_about_the_middle(self, kick):
+        for offset in (1, 2, 3, 4):
+            before = self.treble_ratio(kick, 15 - offset, 16 - offset)
+            after = self.treble_ratio(kick, 14 + offset, 15 + offset)
+            assert after == pytest.approx(before, abs=0.15)
+
+    def test_the_kick_body_survives_the_filter(self, kick):
+        # 40 Hz is far below the lowest cutoff of 150 Hz
+        centre = slice(14 * self.SR, 16 * self.SR)
+        low = np.sqrt((kick["wet"][centre] ** 2).mean())
+        assert low == pytest.approx(np.sqrt((kick["dry"][centre] ** 2).mean()), rel=0.1)
+
+    def test_cutoff_sweeps_from_12_khz_down_to_150_hz_and_back(self, kick):
+        cutoff = kick["ns"]["cutoff"]
+
+        def at(*times):
+            return evaluate(cutoff, np.array(times))
+
+        np.testing.assert_allclose(at(0, 5, 10, 20, 25, 30), 12000, rtol=1e-9)
+        assert at(15)[0] == pytest.approx(150)
+        # a quarter of the way in the sweep is at half strength, so the cutoff
+        # is 12000 * (150 / 12000) ** 0.5
+        assert at(12.5)[0] == pytest.approx(12000 / np.sqrt(80))
+        np.testing.assert_allclose(at(12), at(18), rtol=1e-9)
+
+    def test_filter_blend_is_zero_outside_and_full_in_the_middle(self, kick):
+        wet = kick["ns"]["wet"]
+        out = evaluate(wet, np.array([0, 5, 10, 10.1, 12.5, 15, 17.5, 20, 25, 30]))
+        np.testing.assert_allclose(out[[0, 1, 2, 7, 8, 9]], 0.0, atol=1e-12)
+        np.testing.assert_allclose(out[[4, 5, 6]], 1.0)
+        assert 0 < out[3] < 1
+
+    def test_no_clicks_where_the_filter_enters_or_leaves(self, kick):
+        for edge in (10, 20):
+            around = slice(int((edge - 0.05) * self.SR), int((edge + 0.05) * self.SR))
+            wet_step = np.abs(np.diff(kick["wet"][around])).max()
+            dry_step = np.abs(np.diff(kick["dry"][around])).max()
+            assert wet_step <= dry_step * 1.5 + 0.01
 
 
 @pytest.mark.parametrize("name", [n for n in SCRIPTS if n != "classic_synths"])

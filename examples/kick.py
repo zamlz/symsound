@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import sympy as sp
+
+from daw.filters import low_pass_filter
 from daw.waves.basic import sawtooth, sine, square
 from daw.waves.time import BPM, TIME
 from daw.waves.utils import WHITE_NOISE, compile, play, plot, save
@@ -31,7 +34,27 @@ stutter = square(stutter_lfo) + 1.0
 
 saw = 0.1 * (saw_beat**saw_decay) * sawtooth(1000) * stutter
 
-w = kick + hat + saw
+dry = kick + hat + saw
 
-play(w, 10)
-save(w, 30, "beat.wav")
+# The low-pass sweep lives in the middle third only. `sweep` rises smoothly
+# from 0 to 1 and back to 0 across it, and is 0 everywhere else. The cutoff
+# falls exponentially from 12 kHz to 150 Hz at the centre, then comes back up.
+# `wet` fades the filtered sound in and out so the outer thirds are the dry
+# sound exactly, with no filter state or phase shift left over.
+duration = 30
+third = duration / 3
+
+sweep = sp.Piecewise(
+    (
+        sp.sin(sp.pi * (TIME - third) / third) ** 2,
+        sp.And(TIME >= third, TIME <= 2 * third),
+    ),
+    (0.0, True),
+)
+cutoff = 12000 * sp.exp(-sp.log(12000 / 150) * sweep)
+wet = sp.Min(1.0, 5 * sweep)
+
+w = dry + wet * (low_pass_filter(dry, cutoff) - dry)
+
+play(w, duration)
+save(w, duration, "beat.wav")
