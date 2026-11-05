@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "daw"
 version = "0.1.0"
-requires-python = ">= 3.11"
+requires-python = ">= 3.14"
 description = "A mathematical and programmatic audio engine"
 authors = [
     { name = "Amlesh Sivanantham", email = "zamlz+publict@pm.me" }
@@ -38,7 +38,7 @@ pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "py314"
 src = ["src", "tests"]
 
 [tool.ruff.lint]
