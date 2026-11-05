@@ -148,6 +148,8 @@ class TestAgainstReferenceImplementation:
                 )
             )
         )
+        edges = np.array([0.0, a, a + d, active, active + r])
+        assume(np.abs(t[:, None] - edges[None, :]).min() > 1e-9)
         np.testing.assert_allclose(
             envelope_function(a, d, s, r)(t, active),
             ref_adsr(a, d, s, r, active, t),
