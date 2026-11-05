@@ -13,7 +13,7 @@
 
     # FIXME: Is there a better way to get the packages from the
     # pyproject.toml file without redefining them here?
-    pythonEnv = pkgs: pkgs.python311.withPackages (ps: with ps; [
+    pythonEnv = pkgs: pkgs.python3.withPackages (ps: with ps; [
       ipdb
       ipython
       matplotlib

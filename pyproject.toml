@@ -15,7 +15,8 @@ dependencies = [
   "numpy",
   "sounddevice",
   "soundfile",
-  "sympy"
+  "sympy",
+  "sympy.*"
 ]
 
 [project.optional-dependencies]
@@ -52,6 +53,7 @@ ignore = ["SIM108", "SIM300"]
 module = [
   "sounddevice",
   "soundfile",
-  "sympy"
+  "sympy",
+  "sympy.*"
 ]
 ignore_missing_imports = true
