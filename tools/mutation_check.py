@@ -328,10 +328,19 @@ MUTANTS = [
 ]
 
 
+DOCS_FRESHNESS_TEST = (
+    "tests/test_docs.py::test_docs_are_up_to_date_with_what_their_code_produces"
+)
+
+
 def run_suite():
     env = dict(os.environ, HYPOTHESIS_PROFILE="ci")
     command = [sys.executable, "-m", "pytest", "-x", "-q", "--no-cov"]
     command += ["-p", "no:cacheprovider", "tests"]
+    # The docs freshness test rebuilds every graph, so it would "kill" any
+    # mutant that changes a picture. That says nothing about whether the unit
+    # tests notice, which is what this tool measures.
+    command += ["--deselect", DOCS_FRESHNESS_TEST]
     result = subprocess.run(
         command,
         cwd=ROOT,
