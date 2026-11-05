@@ -36,3 +36,14 @@ def test_negative_parameters_are_rejected(args):
 def test_zero_attack_starts_at_full_level():
     env = adsr_envelope(0, 0.1, 0.5, 0.1).subs(ACTIVE_DURATION, 1.0)
     assert float(env.subs(TIME, 0.0)) == pytest.approx(1.0)
+
+
+def test_shifted_envelope_is_silent_before_it_starts():
+    # Notes are placed in time by substituting TIME -> TIME - start. The
+    # envelope must stay at zero until then instead of ramping up backwards.
+    start = 0.5
+    env = adsr_envelope(0.1, 0.1, 0.5, 0.1).subs(ACTIVE_DURATION, 0.2)
+    shifted = env.subs(TIME, TIME - start)
+    assert float(shifted.subs(TIME, 0.0)) == 0.0
+    assert float(shifted.subs(TIME, start - 0.1)) == 0.0
+    assert float(shifted.subs(TIME, start + 0.1)) == pytest.approx(1.0)
