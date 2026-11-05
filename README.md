@@ -34,7 +34,7 @@ modulation stays correct.
 | `src/daw/waves/utils.py` | `compile`, `play`, `save`, `plot`, `WHITE_NOISE` |
 | `src/daw/envelope.py` | `adsr_envelope` and the `ACTIVE_DURATION` symbol |
 | `src/daw/filters.py` | Experimental Laplace-domain low-pass filter |
-| `src/*.py` | Example scripts (`kick.py`, `ode_to_joy.py`, ...) |
+| `examples/` | Example scripts (`kick.py`, `ode_to_joy.py`, ...) |
 | `tests/` | Pytest suite |
 
 ## Development
@@ -69,9 +69,12 @@ Tool settings live in `pyproject.toml` (ruff, mypy, pytest).
 ## Running the examples
 
 ```sh
-python src/kick.py
-python src/ode_to_joy.py
+python examples/kick.py
+python examples/ode_to_joy.py
 ```
+
+The dev shell puts `src/` on `PYTHONPATH`. Outside it, install the package with
+`pip install -e .` first.
 
 Playback needs [PortAudio](https://www.portaudio.com) via `sounddevice`.
 `sounddevice` is only imported when `play` is called, so compiling, saving and

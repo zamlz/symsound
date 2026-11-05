@@ -35,6 +35,10 @@
           (pythonEnv pkgs)
           pkgs.ruff
         ];
+        # Lets the scripts in examples/ import the daw package
+        shellHook = ''
+          export PYTHONPATH="$PWD/src''${PYTHONPATH:+:$PYTHONPATH}"
+        '';
       };
     });
 
