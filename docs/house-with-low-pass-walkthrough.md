@@ -1,4 +1,4 @@
-# Walkthrough: `examples/kick_with_low_pass.py`
+# Walkthrough: `examples/house_with_low_pass.py`
 
 <!-- md-toc: -->
 - [The repeating decay (the trick behind every drum here)](#the-repeating-decay-the-trick-behind-every-drum-here)
@@ -7,7 +7,7 @@
 - [Changing it](#changing-it)
 <!-- md-toc: end -->
 
-`kick_with_low_pass.py` makes a 30 second beat: a kick drum, a hi-hat and a stuttering saw
+`house_with_low_pass.py` makes a 30 second beat: a kick drum, a hi-hat and a stuttering saw
 buzz, with a low-pass filter sweep in the middle third. This page goes through
 it a piece at a time. The code blocks are the real file, in order.
 
@@ -62,7 +62,7 @@ import runpy
 
 from daw.waves.utils import plot
 
-ns = runpy.run_path("../examples/kick_with_low_pass.py")   # builds the signals, does not play
+ns = runpy.run_path("../examples/house_with_low_pass.py")   # builds the signals, does not play
 plot(
     [ns["kick_beat"], ns["kick_beat"] ** ns["kick_decay"], ns["kick"]],
     duration=4,
@@ -71,12 +71,12 @@ plot(
             "kick: times sine(40)"],
     stacked=True,
     title="The kick, one bar",
-    output_file="img/kick-kick.png",
+    output_file="img/house-kick.png",
 )
 ```
 <!-- md-code: id="kick-kick"; bin="python3"; timeout=120 -->
 
-![Building the kick: a ramp, bent, times a 40 Hz sine](img/kick-kick.png)
+![Building the kick: a ramp, bent, times a 40 Hz sine](img/house-kick.png)
 
 The top panel is the ramp: it starts each beat at 1 and falls to 0. The middle
 panel bends it. The bottom is the 40 Hz sine inside that outline: a thump at
@@ -108,19 +108,19 @@ import runpy
 
 from daw.waves.utils import plot
 
-ns = runpy.run_path("../examples/kick_with_low_pass.py")
+ns = runpy.run_path("../examples/house_with_low_pass.py")
 plot(
     [ns["kick_beat"], ns["hat_beat"]],
     duration=4,
     bpm=ns["bpm"],
     labels=["kick_beat", "hat_beat"],
     title="The hat's ramp restarts half a beat after the kick's",
-    output_file="img/kick-offset.png",
+    output_file="img/house-offset.png",
 )
 ```
 <!-- md-code: id="kick-offset"; bin="python3"; timeout=120 -->
 
-![The kick and hat ramps, half a beat apart](img/kick-offset.png)
+![The kick and hat ramps, half a beat apart](img/house-offset.png)
 
 The kick ramp (blue) jumps back to 1 on the beat: 0, 1, 2, 3. The hat ramp
 (orange) jumps back half a beat later: 0.5, 1.5, 2.5, 3.5. Then the power of
@@ -133,7 +133,7 @@ import numpy as np
 
 from daw.waves.utils import plot
 
-ns = runpy.run_path("../examples/kick_with_low_pass.py")
+ns = runpy.run_path("../examples/house_with_low_pass.py")
 np.random.seed(0)    # the hat is noise: seed it so this graph is the same every run
 plot(
     [ns["hat_beat"] ** ns["hat_decay"], ns["hat"]],
@@ -142,12 +142,12 @@ plot(
     labels=["hat_beat ** 20: a short spike", "hat: times noise, at 0.25"],
     stacked=True,
     title="The hat, two beats",
-    output_file="img/kick-hat.png",
+    output_file="img/house-hat.png",
 )
 ```
 <!-- md-code: id="kick-hat"; bin="python3"; timeout=120 -->
 
-![The hat: a spike outline filled with noise](img/kick-hat.png)
+![The hat: a spike outline filled with noise](img/house-hat.png)
 
 Raising to the power of 20 squashes the ramp into a narrow spike just after the
 off-beat, and multiplying by noise fills the spike with hiss.
@@ -185,7 +185,7 @@ import runpy
 
 from daw.waves.utils import plot
 
-ns = runpy.run_path("../examples/kick_with_low_pass.py")
+ns = runpy.run_path("../examples/house_with_low_pass.py")
 plot(
     [ns["stutter_lfo"], ns["stutter"], ns["saw_beat"] ** ns["saw_decay"], ns["saw"]],
     duration=4,
@@ -194,12 +194,12 @@ plot(
             "saw_beat ** 9: when the hit happens", "saw"],
     stacked=True,
     title="The saw hit, one bar",
-    output_file="img/kick-saw.png",
+    output_file="img/house-saw.png",
 )
 ```
 <!-- md-code: id="kick-saw"; bin="python3"; timeout=120 -->
 
-![The saw: a stutter gate shaping a buzz that hits in the middle of the bar](img/kick-saw.png)
+![The saw: a stutter gate shaping a buzz that hits in the middle of the bar](img/house-saw.png)
 
 The first panel is the gate speed wandering between about 6 and 18 per second.
 The second is the gate itself, flipping between 0 and 2. The third is the decay
@@ -222,7 +222,7 @@ import numpy as np
 
 from daw.waves.utils import plot
 
-ns = runpy.run_path("../examples/kick_with_low_pass.py")
+ns = runpy.run_path("../examples/house_with_low_pass.py")
 np.random.seed(0)    # the hat is noise: seed it so this graph is the same every run
 plot(
     [ns["kick"], ns["hat"], ns["saw"], ns["dry"]],
@@ -230,12 +230,12 @@ plot(
     bpm=ns["bpm"],
     labels=["kick", "hat", "saw", "dry = kick + hat + saw"],
     stacked=True,
-    output_file="img/kick-dry.png",
+    output_file="img/house-dry.png",
 )
 ```
 <!-- md-code: id="kick-dry"; bin="python3"; timeout=120 -->
 
-![The three drums and their sum](img/kick-dry.png)
+![The three drums and their sum](img/house-dry.png)
 
 ## The filter sweep
 
@@ -276,7 +276,7 @@ import runpy
 
 from daw.waves.utils import plot
 
-ns = runpy.run_path("../examples/kick_with_low_pass.py")
+ns = runpy.run_path("../examples/house_with_low_pass.py")
 plot(
     [ns["sweep"], ns["cutoff"], ns["wet"]],
     duration=30,
@@ -285,12 +285,12 @@ plot(
             "wet: how much of the filtered sound is used"],
     stacked=True,
     title="The filter sweep over 30 seconds",
-    output_file="img/kick-sweep.png",
+    output_file="img/house-sweep.png",
 )
 ```
 <!-- md-code: id="kick-sweep"; bin="python3"; timeout=120 -->
 
-![The sweep, the cutoff and the wet amount over 30 seconds](img/kick-sweep.png)
+![The sweep, the cutoff and the wet amount over 30 seconds](img/house-sweep.png)
 
 Everything else in the sweep is derived from this one curve.
 
@@ -363,18 +363,18 @@ import numpy as np
 
 from daw.waves.utils import spectrogram
 
-ns = runpy.run_path("../examples/kick_with_low_pass.py")
+ns = runpy.run_path("../examples/house_with_low_pass.py")
 np.random.seed(0)    # the hat is noise: seed it so this graph is the same every run
 spectrogram(ns["dry"], 30, max_frequency=8000, title="dry",
-            output_file="img/kick-spec-dry.png")
+            output_file="img/house-spec-dry.png")
 spectrogram(ns["w"], 30, max_frequency=8000, title="w: with the sweep",
-            output_file="img/kick-spec-w.png")
+            output_file="img/house-spec-w.png")
 ```
 <!-- md-code: id="kick-spectrograms"; bin="python3"; timeout=180 -->
 
-![The dry beat](img/kick-spec-dry.png)
+![The dry beat](img/house-spec-dry.png)
 
-![The beat with the sweep](img/kick-spec-w.png)
+![The beat with the sweep](img/house-spec-w.png)
 
 The vertical stripes are the hits. The brightest band at the bottom is the kick
 body, which the sweep never touches (40 Hz is far below the lowest cutoff of
@@ -388,7 +388,7 @@ import numpy as np
 
 from daw.waves.utils import plot
 
-ns = runpy.run_path("../examples/kick_with_low_pass.py")
+ns = runpy.run_path("../examples/house_with_low_pass.py")
 np.random.seed(0)    # the hat is noise: seed it so this graph is the same every run
 plot(
     [ns["dry"], ns["w"]],
@@ -397,12 +397,12 @@ plot(
     labels=["dry", "w"],
     stacked=True,
     title="One beat at 15 s, the filter at its most closed",
-    output_file="img/kick-zoom.png",
+    output_file="img/house-zoom.png",
 )
 ```
 <!-- md-code: id="kick-zoom"; bin="python3"; timeout=180 -->
 
-![One beat of the dry beat and of the filtered beat](img/kick-zoom.png)
+![One beat of the dry beat and of the filtered beat](img/house-zoom.png)
 
 The top panel has the hat's burst of noise at the half-beat (around 15.22 s);
 the bottom does not. What is left is the smooth kick wave. The saw only fires

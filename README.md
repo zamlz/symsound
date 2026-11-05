@@ -1,6 +1,6 @@
 # daw
 
-> ./examples/kick.py # the dry signal equation ->
+> ./examples/house.py # the dry signal equation ->
 
 $$
 \begin{aligned}
@@ -41,7 +41,7 @@ modulation stays correct.
 ## Documentation
 
 See [docs/](docs/README.md) for how to use each piece, with graphs of the
-signals and a line-by-line walkthrough of `examples/kick.py`. The code blocks
+signals and a line-by-line walkthrough of `examples/house.py`. The code blocks
 in the docs are run by [mdutils](https://github.com/zamlz/mdutils) (`md`,
 provided by the dev shell), which also draws the graphs:
 
@@ -61,7 +61,7 @@ nix develop -c python tools/build_docs.py --check  # fail if they are stale
 | `src/daw/envelope.py` | `adsr_envelope` and the `ACTIVE_DURATION` symbol |
 | `src/daw/filters.py` | First-order low-pass filter, applied on the sample grid |
 | `docs/` | How to use the library, with graphs; the code blocks are executed |
-| `examples/` | Example scripts (`kick.py`, `kick_with_low_pass.py`, ...) |
+| `examples/` | Example scripts (`house.py`, `house_with_low_pass.py`, ...) |
 | `tests/` | Pytest suite, golden files and guard tests |
 | `tools/` | `mutation_check.py` (proves the tests catch bugs), `build_docs.py` (runs the docs) |
 | `guidelines.md` | How we test, lint and commit. Read before contributing |
@@ -101,8 +101,8 @@ per-feature checklists and conventions are in [guidelines.md](guidelines.md).
 ## Running the examples
 
 ```sh
-python examples/kick.py
-python examples/kick_with_low_pass.py
+python examples/house.py
+python examples/house_with_low_pass.py
 python examples/ode_to_joy.py
 ```
 

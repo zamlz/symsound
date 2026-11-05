@@ -179,5 +179,5 @@ plot(late_tone, duration=2.0, output_file="img/concepts-piecewise.png")
 
 ![Silence for one second, then a 5 Hz sine](img/concepts-piecewise.png)
 
-The library's envelopes, `trigger` and the sweep in `kick_with_low_pass.py` are all built
+The library's envelopes, `trigger` and the sweep in `house_with_low_pass.py` are all built
 this way. See [Combining signals](combining.md).

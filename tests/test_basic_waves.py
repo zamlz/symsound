@@ -257,7 +257,7 @@ class TestSawtooth:
         assert before - after == pytest.approx(2, abs=1e-6)
 
     def test_shifted_inverted_sawtooth_is_a_falling_ramp(self):
-        # kick.py builds (1 - sawtooth(time_shift=TIME + half a period)) / 2
+        # house.py builds (1 - sawtooth(time_shift=TIME + half a period)) / 2
         # as a ramp that falls monotonically from 1 to 0 over each period
         wave = (1 - sawtooth(1, time_shift=TIME + 0.5)) / 2
         t = np.linspace(0.0001, 0.9999, 500)

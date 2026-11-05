@@ -106,7 +106,7 @@ plot([fade_in, swelling], duration=3.0, labels=["fade_in", "fade_in * sine(8)"],
 
 `sin(pi * x) ** 2` goes 0, up to 1 at `x = 0.5`, and back to 0 at `x = 1`, with
 smooth edges. Put a time window around it and you have a smooth "bump" signal
-that is 0 everywhere else. This is the heart of `kick_with_low_pass.py`:
+that is 0 everywhere else. This is the heart of `house_with_low_pass.py`:
 
 ```python
 import sympy as sp

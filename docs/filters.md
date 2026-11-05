@@ -189,7 +189,7 @@ spectrogram(wah, duration=2.0, max_frequency=4000,
 For a smooth sweep that sounds even, move the cutoff exponentially, not
 linearly, because we hear pitch as ratios. Moving from 12 kHz to 150 Hz is
 `12000 * exp(-log(12000 / 150) * s)`, where `s` goes from 0 to 1. That is the
-trick in the [`kick_with_low_pass.py` walkthrough](kick-with-low-pass-walkthrough.md).
+trick in the [`house_with_low_pass.py` walkthrough](house-with-low-pass-walkthrough.md).
 
 ## How it behaves
 

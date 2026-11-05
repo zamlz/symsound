@@ -6,7 +6,7 @@ afternoon.
 ## Clipping
 
 Signals above 1 or below -1 are clipped when played or saved. Mixed signals add
-up: scale the mix. `examples/kick.py` and `examples/kick_with_low_pass.py` peak at about 1.19 and clip a little.
+up: scale the mix. `examples/house.py` and `examples/house_with_low_pass.py` peak at about 1.19 and clip a little.
 
 ## Time shifting a plain oscillator does not silence the start
 

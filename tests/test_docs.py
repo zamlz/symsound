@@ -26,8 +26,8 @@ from test_policy import public_api
 ROOT = Path(__file__).parent.parent
 DOCS = ROOT / "docs"
 PAGES = sorted(DOCS.glob("*.md"))
-WALKTHROUGH = DOCS / "kick-with-low-pass-walkthrough.md"
-KICK = (ROOT / "examples" / "kick_with_low_pass.py").read_text()
+WALKTHROUGH = DOCS / "house-with-low-pass-walkthrough.md"
+KICK = (ROOT / "examples" / "house_with_low_pass.py").read_text()
 
 FENCED_PYTHON = re.compile(
     r"^```python([^\n]*)\n(.*?)^```\n(<!-- md-code: ([^>]*) -->)?", re.S | re.M
@@ -61,7 +61,7 @@ def load_build_docs():
 
 def test_there_are_docs_to_check():
     names = {p.name for p in PAGES}
-    assert {"README.md", "concepts.md", "kick-with-low-pass-walkthrough.md"} <= names
+    assert {"README.md", "concepts.md", "house-with-low-pass-walkthrough.md"} <= names
 
 
 class TestCodeBlocks:
@@ -72,7 +72,7 @@ class TestCodeBlocks:
                 continue
             assert code.strip() in KICK, (
                 f"{page.name}: a python block is neither run by md (add an "
-                f"md-code comment), quoted from examples/kick.py, nor marked "
+                f"md-code comment), quoted from examples/house.py, nor marked "
                 f"`python no-run`:\n{code}"
             )
 
@@ -180,10 +180,10 @@ class TestKickWalkthrough:
     def test_quotes_the_real_example(self):
         assert self.quoted()
         for code in self.quoted():
-            assert code.strip() in KICK, f"not in examples/kick.py:\n{code}"
+            assert code.strip() in KICK, f"not in examples/house.py:\n{code}"
 
     def test_covers_the_whole_example(self):
-        # Every code line of kick.py (apart from blank lines, comments and the
+        # Every code line of house.py (apart from blank lines, comments and the
         # shebang) must appear in a quoted block, so edits to the example are
         # noticed here and the docs get updated
         quoted = "\n".join(self.quoted())

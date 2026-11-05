@@ -123,7 +123,7 @@ plot([normal, ahead], duration=2.0,
 
 The shifted wave is the same shape, but its jumps arrive a quarter of a cycle
 sooner. Use it to offset the phase of a repeating wave so its peak lands where
-you want it relative to the beat. `kick.py` uses this to place the kick, hat and
+you want it relative to the beat. `house.py` uses this to place the kick, hat and
 saw hits within the bar. A shift by a whole number of cycles changes nothing.
 
 ## Placing notes in a song

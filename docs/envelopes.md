@@ -99,4 +99,4 @@ To place each note in a song, see [Time and rhythm](time-and-rhythm.md).
 
 Drum hits do not need ADSR. A repeating ramp raised to a power makes a decay
 that restarts every cycle. See [Combining signals](combining.md) and
-[the `kick_with_low_pass.py` walkthrough](kick-with-low-pass-walkthrough.md).
+[the `house_with_low_pass.py` walkthrough](house-with-low-pass-walkthrough.md).

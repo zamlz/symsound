@@ -79,8 +79,8 @@ def test_tests_are_not_silently_skipped():
 def test_golden_files_exist_for_every_audible_example():
     expected = {
         "c_major_shimmer",
-        "kick",
-        "kick_with_low_pass",
+        "house",
+        "house_with_low_pass",
         "ode_to_joy",
         "weighted_blend_test",
     }

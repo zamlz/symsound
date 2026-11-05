@@ -10,9 +10,9 @@ implemented. Read them in order the first time, then use them as reference.
 | [Time and rhythm](time-and-rhythm.md) | `BPM`, shifting a signal in time, placing notes in a song |
 | [Envelopes](envelopes.md) | `adsr_envelope` and shaping a sound's loudness over time |
 | [Filters](filters.md) | `low_pass_filter`, including sweeping the cutoff |
-| [Combining signals](combining.md) | Mixing, gating, fading, crossfading, the building blocks of `kick_with_low_pass.py` |
+| [Combining signals](combining.md) | Mixing, gating, fading, crossfading, the building blocks of `house_with_low_pass.py` |
 | [Playing, saving and plotting](output.md) | `compile`, `play`, `save`, `plot` |
-| [`kick_with_low_pass.py` walkthrough](kick-with-low-pass-walkthrough.md) | The whole example explained line by line |
+| [`house_with_low_pass.py` walkthrough](house-with-low-pass-walkthrough.md) | The whole example explained line by line |
 | [Gotchas](gotchas.md) | Limits and surprises worth knowing before they bite |
 
 The code blocks in these pages are real. They are run by

@@ -45,7 +45,7 @@ A change is done only when **all** of these hold:
       makes or changes a signal, a graph (see [section 14](#14-writing-the-docs)).
       `tests/test_docs.py` fails on an undocumented public name, and the
       `docs` flake check fails if the docs are stale. If you change
-      `examples/kick_with_low_pass.py`, update `docs/kick-with-low-pass-walkthrough.md`; the test requires
+      `examples/house_with_low_pass.py`, update `docs/house-with-low-pass-walkthrough.md`; the test requires
       it to quote the file.
 - [ ] Nothing was validated only by "it ran". If it makes sound, the test
       measures the sound (peak level, pitch, silence where there should be
@@ -404,7 +404,7 @@ Each of these has a test. When you fix one, flip its test as described in
 | A filtered expression can only be evaluated over a uniform sample grid, not at a single time; the filter starts at rest at the first sample | `filters.py` | `TestValidation` |
 | `WHITE_NOISE` is one shared symbol, so every use in an expression sees the same samples | `waves/utils.py` | `test_white_noise_symbol_is_one_shared_signal` |
 | `sawtooth_v2` is scaled by pi/2 and overshoots about 18% (Gibbs), unlike `sawtooth` which is within +/-1 | `waves/basic.py` | `TestSawtoothV2` |
-| `examples/kick.py` and `kick_with_low_pass.py` peak at about 1.19, so it clips on playback and in saved files | `examples/kick.py` | golden file (`test_example_sound_has_not_changed`) |
+| `examples/house.py` and `house_with_low_pass.py` peak at about 1.19, so it clips on playback and in saved files | `examples/house.py` | golden file (`test_example_sound_has_not_changed`) |
 | `adsr_envelope` uses one global `ACTIVE_DURATION` symbol, so each note needs its own `subs` | `envelope.py` | `TestReleaseFromAnyStage` |
 | Phase integration is symbolic (`sp.integrate`), so frequency expressions SymPy cannot integrate fail, and large ones are slow | `waves/basic.py` | `test_frequency_modulation_integrates_the_frequency` |
 | `adsr_envelope` raises a bare `Exception` for negative parameters | `envelope.py` | `TestValidation` |
@@ -441,7 +441,7 @@ Rules, all enforced by `tests/test_docs.py` or the `docs` flake check:
 
 - **Each block runs alone**, in a fresh `python3`, from the `docs/` directory.
   Import everything it uses. Paths are relative to `docs/` (`img/...`,
-  `../examples/kick_with_low_pass.py`).
+  `../examples/house_with_low_pass.py`).
 - **Graphs are made by the blocks**, with `plot(..., output_file=...)` and
   `spectrogram(..., output_file=...)`. Name images `img/<page>-<what>.png`, add
   alt text, and keep them 10 inches wide (the defaults). Commit the PNGs.
@@ -456,7 +456,7 @@ Rules, all enforced by `tests/test_docs.py` or the `docs` flake check:
   do not edit the `md-code-output` comments. Rerun the tool.
 - A python block that should not be run (it needs speakers) is written
   ```` ```python no-run ````. The only other undirected blocks are quotes of
-  `examples/kick_with_low_pass.py`, which must match the file exactly.
+  `examples/house_with_low_pass.py`, which must match the file exactly.
 - A block that raises is recorded by `md` as a traceback; the check treats that
   as a failure.
 - After changing the library, regenerate the docs and look at the diff of the
