@@ -1,7 +1,5 @@
 # daw
 
-> ./examples/house.py # the dry signal equation ->
-
 $$
 \begin{aligned}
 d(t) ={}& \left(\left\lfloor \tfrac{7t}{3} + 1 \right\rfloor - \tfrac{7t}{3}\right)^{1/2} \sin(80\pi t) \\
@@ -12,6 +10,7 @@ d(t) ={}& \left(\left\lfloor \tfrac{7t}{3} + 1 \right\rfloor - \tfrac{7t}{3}\rig
 \end{aligned}
 $$
 
+> Equation from `./examples/house.py`,
 > where $n(t) \sim U(-1, 1)$ is white noise, a new random value at every sample.
 
 A mathematical and programmatic audio engine. Signals are
