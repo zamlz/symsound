@@ -18,4 +18,6 @@ z = w3 * sine(Note.G5)
 n = w3 * sine(Note.C6)
 
 chord = x + y + z + n
-play(chord, duration=5)
+# Only play when run as a script, so importing this file is silent
+if __name__ == "__main__":
+    play(chord, duration=5)

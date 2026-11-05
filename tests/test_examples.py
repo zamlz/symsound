@@ -304,3 +304,15 @@ class TestOdeToJoy:
         for note, duration in ode_piece["notes"]:
             assert note is None or isinstance(note, Note)
             assert duration > 0
+
+
+@pytest.mark.parametrize("name", SCRIPTS)
+def test_importing_an_example_plays_and_saves_nothing(
+    name, fake_sounddevice, tmp_path, monkeypatch
+):
+    # The docs and tests load examples to look at their signals, and nobody
+    # wants that to come out of the speakers or litter the disk
+    monkeypatch.chdir(tmp_path)
+    runpy.run_path(str(EXAMPLES / f"{name}.py"))
+    assert fake_sounddevice.plays == []
+    assert list(tmp_path.iterdir()) == []

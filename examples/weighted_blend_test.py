@@ -25,4 +25,6 @@ w1 = square(frequency=440)
 w2 = 0.5*sine(frequency=440)
 w = weighted_blend(w1, w2, 1, 1)
 
-play(w, 3)
+# Only play when run as a script, so importing this file is silent
+if __name__ == "__main__":
+    play(w, 3)

@@ -102,4 +102,6 @@ for note, duration in ode_to_joy_notes:
         )
     beat += duration
 
-play(ode_to_joy, bpm.time(beat))
+# Only play when run as a script, so importing this file is silent
+if __name__ == "__main__":
+    play(ode_to_joy, bpm.time(beat))

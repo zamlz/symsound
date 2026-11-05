@@ -33,5 +33,7 @@ saw = 0.1 * (saw_beat**saw_decay) * sawtooth(1000) * stutter
 
 w = kick + hat + saw
 
-play(w, 10)
-save(w, 30, "beat.wav")
+# Only play when run as a script, so importing this file is silent
+if __name__ == "__main__":
+    play(w, 10)
+    save(w, 30, "beat.wav")
