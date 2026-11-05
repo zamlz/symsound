@@ -26,8 +26,15 @@ modulation stays correct.
 
 ## Documentation
 
-See [docs/](docs/README.md) for how to use each piece, with a line-by-line
-walkthrough of `examples/kick.py`.
+See [docs/](docs/README.md) for how to use each piece, with graphs of the
+signals and a line-by-line walkthrough of `examples/kick.py`. The code blocks
+in the docs are run by [mdutils](https://github.com/zamlz/mdutils) (`md`,
+provided by the dev shell), which also draws the graphs:
+
+```sh
+nix develop -c python tools/build_docs.py          # regenerate output and graphs
+nix develop -c python tools/build_docs.py --check  # fail if they are stale
+```
 
 ## Layout
 
@@ -39,10 +46,10 @@ walkthrough of `examples/kick.py`.
 | `src/daw/waves/utils.py` | `compile`, `play`, `save`, `plot`, `WHITE_NOISE` |
 | `src/daw/envelope.py` | `adsr_envelope` and the `ACTIVE_DURATION` symbol |
 | `src/daw/filters.py` | First-order low-pass filter, applied on the sample grid |
-| `docs/` | How to use the library (tested like code) |
+| `docs/` | How to use the library, with graphs; the code blocks are executed |
 | `examples/` | Example scripts (`kick.py`, `ode_to_joy.py`, ...) |
 | `tests/` | Pytest suite, golden files and guard tests |
-| `tools/` | `mutation_check.py`, which proves the tests catch bugs |
+| `tools/` | `mutation_check.py` (proves the tests catch bugs), `build_docs.py` (runs the docs) |
 | `guidelines.md` | How we test, lint and commit. Read before contributing |
 
 ## Development

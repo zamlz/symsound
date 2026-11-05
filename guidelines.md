@@ -21,6 +21,7 @@ Contents
 11. [Code style and dependencies](#11-code-style-and-dependencies)
 12. [Commits](#12-commits)
 13. [Known limitations register](#13-known-limitations-register)
+14. [Writing the docs](#14-writing-the-docs)
 
 ---
 
@@ -40,10 +41,12 @@ A change is done only when **all** of these hold:
 - [ ] The README and this document are updated if behavior, commands or
       conventions changed.
 - [ ] Every new public function or class is explained in `docs/` for someone
-      who wants to *use* it, with a runnable example. `tests/test_docs.py`
-      runs every `python` block in `docs/` and fails on an undocumented public
-      name. If you change `examples/kick.py`, update
-      `docs/kick-walkthrough.md`; the test requires it to quote the file.
+      who wants to *use* it, with an executable example and, for anything that
+      makes or changes a signal, a graph (see [section 14](#14-writing-the-docs)).
+      `tests/test_docs.py` fails on an undocumented public name, and the
+      `docs` flake check fails if the docs are stale. If you change
+      `examples/kick.py`, update `docs/kick-walkthrough.md`; the test requires
+      it to quote the file.
 - [ ] Nothing was validated only by "it ran". If it makes sound, the test
       measures the sound (peak level, pitch, silence where there should be
       silence, length), see [section 4](#4-how-we-test).
@@ -406,3 +409,55 @@ Each of these has a test. When you fix one, flip its test as described in
 | Phase integration is symbolic (`sp.integrate`), so frequency expressions SymPy cannot integrate fail, and large ones are slow | `waves/basic.py` | `test_frequency_modulation_integrates_the_frequency` |
 | `adsr_envelope` raises a bare `Exception` for negative parameters | `envelope.py` | `TestValidation` |
 | Flake checks only ran on x86_64-linux; other platforms are untested | `flake.nix` | n/a |
+
+## 14. Writing the docs
+
+`docs/` is for people who want to *use* the library. Explain what each piece
+does and how to use it, not how it is implemented, and show it with graphs.
+
+The pages are processed by [`md`](https://github.com/zamlz/mdutils) (an input
+of our flake, available in the dev shell). A python block followed by an
+`md-code` comment is run, and whatever it prints is written back under it:
+
+~~~markdown
+```python
+from daw.waves.basic import sine
+from daw.waves.utils import plot
+
+plot(sine(3), duration=1.0, output_file="img/my-page-sine.png")
+```
+<!-- md-code: id="my-page-sine"; bin="python3" -->
+
+![A 3 Hz sine](img/my-page-sine.png)
+~~~
+
+| Task | Command |
+| --- | --- |
+| Run every block and refresh output and graphs | `nix develop -c python tools/build_docs.py` |
+| Check nothing is stale (what the flake runs) | `nix develop -c python tools/build_docs.py --check` |
+| Fast structural checks only | `nix develop -c pytest tests/test_docs.py -m "not slow"` |
+
+Rules, all enforced by `tests/test_docs.py` or the `docs` flake check:
+
+- **Each block runs alone**, in a fresh `python3`, from the `docs/` directory.
+  Import everything it uses. Paths are relative to `docs/` (`img/...`,
+  `../examples/kick.py`).
+- **Graphs are made by the blocks**, with `plot(..., output_file=...)` and
+  `spectrogram(..., output_file=...)`. Name images `img/<page>-<what>.png`, add
+  alt text, and keep them 10 inches wide (the defaults). Commit the PNGs.
+- **Use a graph for any signal**: a waveform to show shape, a spectrogram to
+  show which frequencies there are and how they move (filters, FM, sweeps,
+  notes). Use slow frequencies (a few Hz) when you want to see individual
+  cycles, `start=` to look inside a long piece, and `stacked=True` with
+  `labels` when signals differ in level.
+- **Anything random must be seeded** (`np.random.seed(0)` before using
+  `WHITE_NOISE`), or the image changes on every run and the check fails.
+- **Output blocks are written by `md`**. Never edit the text under a block, and
+  do not edit the `md-code-output` comments. Rerun the tool.
+- A python block that should not be run (it needs speakers) is written
+  ```` ```python no-run ````. The only other undirected blocks are quotes of
+  `examples/kick.py`, which must match the file exactly.
+- A block that raises is recorded by `md` as a traceback; the check treats that
+  as a failure.
+- After changing the library, regenerate the docs and look at the diff of the
+  images (open the PNGs): a graph that changed is a sound that changed.

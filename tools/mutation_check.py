@@ -10,6 +10,7 @@ Usage: python tools/mutation_check.py [label-substring ...]
 """
 
 import os
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -163,14 +164,75 @@ MUTANTS = [
     (
         "plot axis label",
         "src/daw/waves/utils.py",
-        "plt.xlabel('Time [s]')",
-        "plt.xlabel('Beat [b]')",
+        "last.set_xlabel('Time [s]' if bpm is None else 'Beat [b]')",
+        "last.set_xlabel('Beat [b]')",
     ),
     (
         "plot ignores bpm duration",
         "src/daw/waves/utils.py",
-        "bpm.time(duration)",
-        "duration",
+        "return amount if bpm is None else bpm.time(amount)",
+        "return amount",
+    ),
+    # plotting
+    (
+        "plot window ignores start length",
+        "src/daw/waves/utils.py",
+        "total = start + duration",
+        "total = duration",
+    ),
+    (
+        "plot window starts at zero",
+        "src/daw/waves/utils.py",
+        "first = int(round(start * sample_rate))",
+        "first = 0",
+    ),
+    (
+        "plot start not converted from beats",
+        "src/daw/waves/utils.py",
+        "wave, seconds(start), seconds(duration), sample_rate",
+        "wave, start, seconds(duration), sample_rate",
+    ),
+    (
+        "plot panels do not share time",
+        "src/daw/waves/utils.py",
+        "len(waves), 1, sharex=True,",
+        "len(waves), 1, sharex=False,",
+    ),
+    (
+        "plot accepts the wrong number of labels",
+        "src/daw/waves/utils.py",
+        "if labels is not None and len(labels) != len(waves):",
+        "if False:",
+    ),
+    (
+        "plot output does not make directories",
+        "src/daw/waves/utils.py",
+        "path.parent.mkdir(parents=True, exist_ok=True)",
+        "pass",
+    ),
+    (
+        "spectrogram colour range",
+        "src/daw/waves/utils.py",
+        "vmin=loudest - SPECTROGRAM_RANGE_DB,",
+        "vmin=loudest - 60,",
+    ),
+    (
+        "spectrogram frequency limit ignored",
+        "src/daw/waves/utils.py",
+        "max_frequency if max_frequency is not None else sample_rate / 2",
+        "sample_rate / 2",
+    ),
+    (
+        "spectrogram accepts short windows",
+        "src/daw/waves/utils.py",
+        "if len(samples) < SPECTROGRAM_WINDOW:",
+        "if len(samples) < 0:",
+    ),
+    (
+        "spectrogram frequency axis",
+        "src/daw/waves/utils.py",
+        "extent=(start, start + len(samples) / sample_rate, 0, sample_rate / 2),",
+        "extent=(start, start + len(samples) / sample_rate, 0, sample_rate),",
     ),
     # filters and constants
     (
@@ -288,6 +350,8 @@ def run_suite():
 
 
 def main(filters):
+    # Let the `finally` below restore the source if this is killed
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(130))
     mutants = [m for m in MUTANTS if not filters or any(f in m[0] for f in filters)]
     problems = []
     for label, relative, old, new in mutants:
