@@ -36,7 +36,7 @@ d(t) ={}& \left(\left\lfloor \tfrac{7t}{3} + 1 \right\rfloor - \tfrac{7t}{3}\rig
 &+ 0.25 \left(\left\lfloor \tfrac{7t}{3} + \tfrac{3}{2} \right\rfloor - \tfrac{7t}{3} - \tfrac{1}{2}\right)^{20} n(t) \\
 &+ 0.2 \left(\left\lfloor \tfrac{7t}{12} + \tfrac{3}{2} \right\rfloor - \tfrac{7t}{12} - \tfrac{1}{2}\right)^{9}
 \bigl(1000t - \lfloor 1000t + \tfrac{1}{2} \rfloor\bigr)
-\left(\operatorname{sgn}\sin\!\Bigl(2\pi\bigl(12.5\,t - \tfrac{36}{7\pi}\cos\tfrac{7\pi t}{6}\bigr)\Bigr) + 1\right)
+\left(\mathrm{sgn}\sin\!\Bigl(2\pi\bigl(12.5\,t - \tfrac{36}{7\pi}\cos\tfrac{7\pi t}{6}\bigr)\Bigr) + 1\right)
 \end{aligned}
 $$
 
