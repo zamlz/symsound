@@ -35,7 +35,9 @@ modulation stays correct.
 | `src/daw/envelope.py` | `adsr_envelope` and the `ACTIVE_DURATION` symbol |
 | `src/daw/filters.py` | Experimental Laplace-domain low-pass filter |
 | `examples/` | Example scripts (`kick.py`, `ode_to_joy.py`, ...) |
-| `tests/` | Pytest suite |
+| `tests/` | Pytest suite, golden files and guard tests |
+| `tools/` | `mutation_check.py`, which proves the tests catch bugs |
+| `guidelines.md` | How we test, lint and commit. Read before contributing |
 
 ## Development
 
@@ -57,7 +59,7 @@ pip install -e '.[develop]'
 
 | Task | Command |
 | --- | --- |
-| Run tests | `pytest` |
+| Run tests | `pytest` (add `-m "not slow"` to skip the examples) |
 | Lint | `ruff check .` |
 | Format | `ruff format` |
 | Type check | `mypy src/daw` |
@@ -65,6 +67,9 @@ pip install -e '.[develop]'
 Tool settings live in `pyproject.toml` (ruff, mypy, pytest).
 
 `nix flake check` runs the tests, ruff and mypy in the Nix sandbox.
+
+Every change, new feature and fixed bug needs rigorous tests. The standard,
+per-feature checklists and conventions are in [guidelines.md](guidelines.md).
 
 ## Running the examples
 
