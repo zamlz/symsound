@@ -26,7 +26,8 @@ from test_policy import public_api
 ROOT = Path(__file__).parent.parent
 DOCS = ROOT / "docs"
 PAGES = sorted(DOCS.glob("*.md"))
-KICK = (ROOT / "examples" / "kick.py").read_text()
+WALKTHROUGH = DOCS / "kick-with-low-pass-walkthrough.md"
+KICK = (ROOT / "examples" / "kick_with_low_pass.py").read_text()
 
 FENCED_PYTHON = re.compile(
     r"^```python([^\n]*)\n(.*?)^```\n(<!-- md-code: ([^>]*) -->)?", re.S | re.M
@@ -60,7 +61,7 @@ def load_build_docs():
 
 def test_there_are_docs_to_check():
     names = {p.name for p in PAGES}
-    assert {"README.md", "concepts.md", "kick-walkthrough.md"} <= names
+    assert {"README.md", "concepts.md", "kick-with-low-pass-walkthrough.md"} <= names
 
 
 class TestCodeBlocks:
@@ -172,7 +173,7 @@ class TestKickWalkthrough:
     def quoted(self):
         return [
             code
-            for info, code, fields in python_blocks(DOCS / "kick-walkthrough.md")
+            for info, code, fields in python_blocks(WALKTHROUGH)
             if fields is None
         ]
 
@@ -192,14 +193,14 @@ class TestKickWalkthrough:
             if line.strip() and not line.lstrip().startswith("#")
         ]
         missing = [line for line in lines if line not in quoted]
-        assert not missing, f"docs/kick-walkthrough.md is missing {missing}"
+        assert not missing, f"{WALKTHROUGH.name} is missing {missing}"
 
     def test_the_graph_blocks_load_the_example_without_playing_it(self):
         # run_path without run_name="__main__" must build the signals only
         assert 'if __name__ == "__main__":' in KICK
         graph_blocks = [
             code
-            for _, code, fields in python_blocks(DOCS / "kick-walkthrough.md")
+            for _, code, fields in python_blocks(WALKTHROUGH)
             if fields is not None
         ]
         assert graph_blocks

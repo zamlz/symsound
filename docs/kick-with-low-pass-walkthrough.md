@@ -1,4 +1,4 @@
-# Walkthrough: `examples/kick.py`
+# Walkthrough: `examples/kick_with_low_pass.py`
 
 <!-- md-toc: -->
 - [The repeating decay (the trick behind every drum here)](#the-repeating-decay-the-trick-behind-every-drum-here)
@@ -7,7 +7,7 @@
 - [Changing it](#changing-it)
 <!-- md-toc: end -->
 
-`kick.py` makes a 30 second beat: a kick drum, a hi-hat and a stuttering saw
+`kick_with_low_pass.py` makes a 30 second beat: a kick drum, a hi-hat and a stuttering saw
 buzz, with a low-pass filter sweep in the middle third. This page goes through
 it a piece at a time. The code blocks are the real file, in order.
 
@@ -62,7 +62,7 @@ import runpy
 
 from daw.waves.utils import plot
 
-ns = runpy.run_path("../examples/kick.py")   # builds the signals, does not play
+ns = runpy.run_path("../examples/kick_with_low_pass.py")   # builds the signals, does not play
 plot(
     [ns["kick_beat"], ns["kick_beat"] ** ns["kick_decay"], ns["kick"]],
     duration=4,
@@ -108,7 +108,7 @@ import runpy
 
 from daw.waves.utils import plot
 
-ns = runpy.run_path("../examples/kick.py")
+ns = runpy.run_path("../examples/kick_with_low_pass.py")
 plot(
     [ns["kick_beat"], ns["hat_beat"]],
     duration=4,
@@ -133,7 +133,7 @@ import numpy as np
 
 from daw.waves.utils import plot
 
-ns = runpy.run_path("../examples/kick.py")
+ns = runpy.run_path("../examples/kick_with_low_pass.py")
 np.random.seed(0)    # the hat is noise: seed it so this graph is the same every run
 plot(
     [ns["hat_beat"] ** ns["hat_decay"], ns["hat"]],
@@ -185,7 +185,7 @@ import runpy
 
 from daw.waves.utils import plot
 
-ns = runpy.run_path("../examples/kick.py")
+ns = runpy.run_path("../examples/kick_with_low_pass.py")
 plot(
     [ns["stutter_lfo"], ns["stutter"], ns["saw_beat"] ** ns["saw_decay"], ns["saw"]],
     duration=4,
@@ -222,7 +222,7 @@ import numpy as np
 
 from daw.waves.utils import plot
 
-ns = runpy.run_path("../examples/kick.py")
+ns = runpy.run_path("../examples/kick_with_low_pass.py")
 np.random.seed(0)    # the hat is noise: seed it so this graph is the same every run
 plot(
     [ns["kick"], ns["hat"], ns["saw"], ns["dry"]],
@@ -276,7 +276,7 @@ import runpy
 
 from daw.waves.utils import plot
 
-ns = runpy.run_path("../examples/kick.py")
+ns = runpy.run_path("../examples/kick_with_low_pass.py")
 plot(
     [ns["sweep"], ns["cutoff"], ns["wet"]],
     duration=30,
@@ -363,7 +363,7 @@ import numpy as np
 
 from daw.waves.utils import spectrogram
 
-ns = runpy.run_path("../examples/kick.py")
+ns = runpy.run_path("../examples/kick_with_low_pass.py")
 np.random.seed(0)    # the hat is noise: seed it so this graph is the same every run
 spectrogram(ns["dry"], 30, max_frequency=8000, title="dry",
             output_file="img/kick-spec-dry.png")
@@ -388,7 +388,7 @@ import numpy as np
 
 from daw.waves.utils import plot
 
-ns = runpy.run_path("../examples/kick.py")
+ns = runpy.run_path("../examples/kick_with_low_pass.py")
 np.random.seed(0)    # the hat is noise: seed it so this graph is the same every run
 plot(
     [ns["dry"], ns["w"]],

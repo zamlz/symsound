@@ -35,6 +35,7 @@ def test_every_example_is_covered_by_this_file():
         "c_major_shimmer",
         "classic_synths",
         "kick",
+        "kick_with_low_pass",
         "ode_to_joy",
         "weighted_blend_test",
     }, "add new examples to the tests below"
@@ -80,8 +81,9 @@ def test_classic_synths_filter_attenuates_440_hz_by_the_expected_amount(
     assert np.abs(out).max() < 0.5
 
 
-def test_kick_writes_its_wav_file(fake_sounddevice, tmp_path, monkeypatch):
-    run_example("kick", fake_sounddevice, tmp_path, monkeypatch)
+@pytest.mark.parametrize("name", ["kick", "kick_with_low_pass"])
+def test_kick_writes_its_wav_file(name, fake_sounddevice, tmp_path, monkeypatch):
+    run_example(name, fake_sounddevice, tmp_path, monkeypatch)
     info = sf.info(tmp_path / "beat.wav")
     assert info.samplerate == DEFAULT_SAMPLE_RATE
     assert info.frames == 30 * DEFAULT_SAMPLE_RATE
@@ -95,7 +97,9 @@ def kick(tmp_path_factory):
         mp.setitem(sys.modules, "sounddevice", _SilentSoundDevice)
         mp.chdir(tmp_path_factory.mktemp("kick"))
         np.random.seed(0)
-        ns = runpy.run_path(str(EXAMPLES / "kick.py"), run_name="__main__")
+        ns = runpy.run_path(
+            str(EXAMPLES / "kick_with_low_pass.py"), run_name="__main__"
+        )
     finally:
         mp.undo()
     t = np.arange(30 * DEFAULT_SAMPLE_RATE) / DEFAULT_SAMPLE_RATE
@@ -109,7 +113,7 @@ def kick(tmp_path_factory):
 
 
 class TestKickFilterSweep:
-    """kick.py is 30 s: dry for 10 s, a low-pass sweep for 10 s, dry again"""
+    """kick_with_low_pass.py: 30 s, dry for 10 s, a low-pass sweep, dry again"""
 
     SR = DEFAULT_SAMPLE_RATE
 
