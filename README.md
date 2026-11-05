@@ -33,7 +33,7 @@ modulation stays correct.
 | `src/daw/waves/time.py` | `TIME` symbol and the `BPM` helper |
 | `src/daw/waves/utils.py` | `compile`, `play`, `save`, `plot`, `WHITE_NOISE` |
 | `src/daw/envelope.py` | `adsr_envelope` and the `ACTIVE_DURATION` symbol |
-| `src/daw/filters.py` | Experimental Laplace-domain low-pass filter |
+| `src/daw/filters.py` | First-order low-pass filter, applied on the sample grid |
 | `examples/` | Example scripts (`kick.py`, `ode_to_joy.py`, ...) |
 | `tests/` | Pytest suite, golden files and guard tests |
 | `tools/` | `mutation_check.py`, which proves the tests catch bugs |
@@ -87,8 +87,8 @@ the test suite work on machines without an audio backend.
 
 ## Known limitations
 
-- `daw.filters.low_pass_filter` is unfinished. SymPy often cannot take the
-  Laplace transform of a signal, and a time-varying cutoff is not a valid
-  Laplace-domain filter.
+- A filtered signal can only be evaluated over a uniform grid of sample
+  times (which is what `compile`, `play` and `save` use), not at a single
+  time, and the filter starts at rest at the first sample.
 - White noise is a single shared symbol, so every use of `WHITE_NOISE` in one
   expression sees the same samples.

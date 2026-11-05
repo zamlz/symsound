@@ -83,7 +83,7 @@ Notes:
 src/daw/               the library
   constants.py         Note table, DEFAULT_SAMPLE_RATE
   envelope.py          adsr_envelope, ACTIVE_DURATION
-  filters.py           low_pass_filter (Laplace domain)
+  filters.py           low_pass_filter (first-order IIR on the sample grid)
   waves/basic.py       sine, square, triangle, sawtooth, sawtooth_v2, trigger
   waves/time.py        TIME symbol, BPM
   waves/utils.py       linspace, white_noise, compile, play, save, plot
@@ -193,11 +193,19 @@ tests). Put them in the matching `tests/test_*.py` file.
 ### A filter or other signal processor (`filters.py`)
 
 - [ ] Step response and sine response against the closed form.
-- [ ] Gain at DC, at the cutoff and far above it; phase lag.
+- [ ] Gain at DC, at the cutoff and far above it; phase lag; roll-off slope.
 - [ ] Linearity and zero-in/zero-out.
+- [ ] Works on every kind of signal, not just sines: square, triangle,
+      noise, envelopes, sums, FM, constants. Compare against an independent
+      simulation (`scipy.signal.lsim`, `scipy.integrate.solve_ivp`) and a
+      plain-Python loop of the discretisation. Never test only the inputs
+      that happen to work; coverage cannot tell you about the ones you skipped.
 - [ ] Input types: ints, `sympy.Integer`, floats, expressions. Anything that
-      fails is a strict xfail with the error type (see `test_float_cutoff_is_supported`).
-- [ ] Time-varying parameters compared to a numerically integrated reference.
+      fails is a strict xfail with the error type.
+- [ ] Time-varying parameters compared to an ODE solver on the exact input.
+- [ ] Time shifting (inside and outside the filter) and sample-rate
+      independence; error shrinks at the expected order when the rate doubles.
+- [ ] Invalid input (negative cutoff, a single time, an uneven grid) raises.
 
 ### A utility (`waves/utils.py`) or anything that touches files, audio or plots
 
@@ -383,9 +391,8 @@ Each of these has a test. When you fix one, flip its test as described in
 | Limitation | Where | Test |
 | --- | --- | --- |
 | `compile()` of a constant expression returns a scalar instead of one value per sample, so `play`/`save` of pure silence or DC would fail | `waves/utils.py` | `test_constant_expression_is_broadcast_to_every_sample` (xfail) |
-| `low_pass_filter` raises `TypeError` inside sympy for float cutoffs (`50.0`); ints and sympy numbers work | `filters.py` | `test_float_cutoff_is_supported` (xfail) |
+| A filtered expression can only be evaluated over a uniform sample grid, not at a single time; the filter starts at rest at the first sample | `filters.py` | `TestValidation` |
 | `WHITE_NOISE` is one shared symbol, so every use in an expression sees the same samples | `waves/utils.py` | `test_white_noise_symbol_is_one_shared_signal` |
-| A time-varying cutoff is only approximately a low-pass filter (it is not a Laplace-domain system) | `filters.py` | `test_time_varying_cutoff_approximates_a_numerically_integrated_filter` |
 | `sawtooth_v2` is scaled by pi/2 and overshoots about 18% (Gibbs), unlike `sawtooth` which is within +/-1 | `waves/basic.py` | `TestSawtoothV2` |
 | `examples/kick.py` peaks at about 1.19, so it clips on playback and in saved files | `examples/kick.py` | golden file (`test_example_sound_has_not_changed`) |
 | `adsr_envelope` uses one global `ACTIVE_DURATION` symbol, so each note needs its own `subs` | `envelope.py` | `TestReleaseFromAnyStage` |
