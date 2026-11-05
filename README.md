@@ -1,6 +1,7 @@
 # daw
 
 > ./examples/kick.py # the dry signal equation ->
+
 $$
 \begin{aligned}
 d(t) ={}& \left(\left\lfloor \tfrac{7t}{3} + 1 \right\rfloor - \tfrac{7t}{3}\right)^{1/2} \sin(80\pi t) \\
@@ -10,6 +11,7 @@ d(t) ={}& \left(\left\lfloor \tfrac{7t}{3} + 1 \right\rfloor - \tfrac{7t}{3}\rig
 \left(\mathrm{sgn}\sin\!\Bigl(2\pi\bigl(12.5\,t - \tfrac{36}{7\pi}\cos\tfrac{7\pi t}{6}\bigr)\Bigr) + 1\right)
 \end{aligned}
 $$
+
 > where $n(t) \sim U(-1, 1)$ is white noise, a new random value at every sample.
 
 A mathematical and programmatic audio engine. Signals are
