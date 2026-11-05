@@ -8,9 +8,8 @@ import sympy as sp
 from daw.constants import Note
 from daw.envelope import ACTIVE_DURATION, adsr_envelope
 from daw.waves.basic import sine, sawtooth, square, triangle, trigger
-from daw.waves.utils import compile, plot
+from daw.waves.utils import play, save
 from daw.waves.time import BPM, TIME
-from daw.sound import play, save
 
 ode_to_joy_notes = [
     (Note.FS4, 0.5),
@@ -100,4 +99,4 @@ for note, duration in ode_to_joy_notes:
         )
     beat += duration
 
-play(compile(ode_to_joy, bpm.time(beat)))
+play(ode_to_joy, bpm.time(beat))
