@@ -8,40 +8,40 @@ from daw.waves.time import TIME
 
 
 def sine(
-        frequency: Union[Expr, float] = Note.A4,
-        time_shift: Union[Expr, float] = TIME,
+        frequency: Expr | float = Note.A4,
+        time_shift: Expr | float = TIME,
 ) -> Expr:
     phase = sp.integrate(frequency, TIME).subs(TIME, time_shift)
     return sp.sin(2 * sp.pi * phase)
 
 
 def square(
-        frequency: Union[Expr, float, int] = Note.A4,
-        time_shift: Union[Expr, float] = TIME,
+        frequency: Expr | float | int = Note.A4,
+        time_shift: Expr | float = TIME,
 ) -> Expr:
     phase = sp.integrate(frequency, TIME).subs(TIME, time_shift)
     return sp.sign(sp.sin(2 * sp.pi * phase))
 
 
 def triangle(
-        frequency: Union[Expr, float, int] = Note.A4,
-        time_shift: Union[Expr, float] = TIME,
+        frequency: Expr | float | int = Note.A4,
+        time_shift: Expr | float = TIME,
 ) -> Expr:
     phase = sp.integrate(frequency, TIME).subs(TIME, time_shift)
     return 2 * sp.Abs(2 * (phase % 1) - 1) - 1
 
 
 def sawtooth(
-        frequency: Union[Expr, float, int] = Note.A4,
-        time_shift: Union[Expr, float] = TIME,
+        frequency: Expr | float | int = Note.A4,
+        time_shift: Expr | float = TIME,
 ) -> Expr:
     phase = sp.integrate(frequency, TIME).subs(TIME, time_shift)
     return 2 * (phase - sp.floor(phase + 0.5))
 
 
 def sawtooth_v2(
-        frequency: Union[Expr, float, int] = Note.A4,
-        time_shift: Union[Expr, float] = TIME,
+        frequency: Expr | float | int = Note.A4,
+        time_shift: Expr | float = TIME,
         resolution: int = 200
 ) -> Expr:
     i = sp.symbols('i', real=True, positive=True)
@@ -49,9 +49,9 @@ def sawtooth_v2(
 
 
 def trigger(
-    trigger_time: Union[Expr, float, int] = 1.0,
+    trigger_time: Expr | float | int = 1.0,
 ) -> Expr:
     return sp.Piecewise(
-        (0.0, TIME < trigger_time),
-        (1.0, TIME >= trigger_time)
+        (0.0, trigger_time > TIME),
+        (1.0, trigger_time <= TIME)
     )

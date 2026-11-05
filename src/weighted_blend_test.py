@@ -5,15 +5,16 @@ import sympy as sp
 
 from daw.constants import Note
 from daw.envelope import adsr_envelope
-from daw.waves.basic import sine, sawtooth, square, triangle
-from daw.waves.utils import play
+from daw.waves.basic import sawtooth, sine, square, triangle
 from daw.waves.time import TIME
+from daw.waves.utils import play
 
 
 def weighted_blend(w1, w2, blend_duration, sharpness=1):
     return sp.Piecewise(
         (
-            w1*(1 - TIME/blend_duration)**sharpness + w2*(TIME/blend_duration)**sharpness,
+            w1 * (1 - TIME / blend_duration) ** sharpness
+            + w2 * (TIME / blend_duration) ** sharpness,
             TIME <= blend_duration
         ),
         (w2, TIME > blend_duration)

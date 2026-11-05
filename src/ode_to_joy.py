@@ -7,9 +7,9 @@ import sympy as sp
 
 from daw.constants import Note
 from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.waves.basic import sine, sawtooth, square, triangle, trigger
-from daw.waves.utils import play, save
+from daw.waves.basic import sawtooth, sine, square, triangle, trigger
 from daw.waves.time import BPM, TIME
+from daw.waves.utils import play, save
 
 ode_to_joy_notes = [
     (Note.FS4, 0.5),
@@ -72,13 +72,16 @@ ode_to_joy_notes = [
     (None, 0.5),
 ]
 
+
 def get_duration(notes):
     return sum(d for _, d in notes)
+
 
 def wave(note):
     vibrato = 20*sine(bpm.frequency(10))*sine(bpm.frequency(1))
     x = sine(note + vibrato) * adsr_envelope(.1, .1, 0.5, .1)
     return x
+
 
 bpm = BPM(160)
 

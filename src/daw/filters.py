@@ -9,7 +9,7 @@ from daw.waves.time import TIME
 
 def low_pass_filter(
     signal: Expr,
-    cutoff_frequency: Union[Expr, float]
+    cutoff_frequency: Expr | float
 ) -> Expr:
     s = sp.symbols('s')
     laplace_signal = sp.laplace_transform(signal, TIME, s, noconds=True)

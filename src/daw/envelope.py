@@ -1,10 +1,9 @@
 from typing import Union
 
 import sympy as sp
-
 from sympy.core.expr import Expr
-from daw.waves.time import TIME
 
+from daw.waves.time import TIME
 
 ACTIVE_DURATION = sp.symbols('active_duration')
 
@@ -45,7 +44,10 @@ def adsr_envelope(
 
     env_piecewise = sp.Piecewise(
         (attack_to_sustain_func, TIME <= ACTIVE_DURATION),
-        (release_func, sp.And(TIME > ACTIVE_DURATION, TIME <= (ACTIVE_DURATION + release))),
+        (
+            release_func,
+            sp.And(TIME > ACTIVE_DURATION, TIME <= (ACTIVE_DURATION + release)),
+        ),
         (0.0, TIME > (ACTIVE_DURATION + release))
     )
     return env_piecewise

@@ -3,10 +3,9 @@
 import numpy as np
 
 from daw.constants import Note
-from daw.waves.basic import sine, sawtooth, square, triangle
-from daw.waves.utils import compile, play, plot, save
+from daw.waves.basic import sawtooth, sine, square, triangle
 from daw.waves.time import TIME
-
+from daw.waves.utils import compile, play, plot, save
 
 w1 = 0.2 * triangle(1)
 w2 = 0.2 * triangle(1, time_shift=TIME+0.15)

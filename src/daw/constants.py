@@ -1,6 +1,5 @@
 from enum import Enum
 
-
 DEFAULT_SAMPLE_RATE = 44100
 
 

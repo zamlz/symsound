@@ -1,16 +1,14 @@
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
-import sounddevice as sd
 import soundfile as sf
 import sympy as sp
 from sympy.core.expr import Expr
 
 from daw.constants import DEFAULT_SAMPLE_RATE, Note
 from daw.waves.time import BPM, TIME
-
 
 WHITE_NOISE = sp.symbols('white_noise', real=True)
 
@@ -29,7 +27,7 @@ def white_noise(duration: float, sample_rate: int) -> npt.ArrayLike:
 
 def compile(
         wave_function: Expr,
-        duration: float, 
+        duration: float,
         sample_rate: int = DEFAULT_SAMPLE_RATE
 ) -> npt.ArrayLike:
     equation = sp.lambdify((TIME, WHITE_NOISE), wave_function, "numpy")
@@ -44,6 +42,9 @@ def play(
     duration: float = 1.0,
     sample_rate: int = DEFAULT_SAMPLE_RATE
 ) -> None:
+    # Imported lazily so the module works without an audio backend
+    import sounddevice as sd
+
     compiled_wave = compile(wave_function, duration, sample_rate)
     try:
         sd.play(compiled_wave, samplerate=sample_rate)
@@ -63,9 +64,9 @@ def save(
 
 
 def plot(
-    wave_function: Union[Expr, List[Expr]],
+    wave_function: Expr | list[Expr],
     duration: float = 1.0,
-    bpm: Optional[BPM] = None,
+    bpm: BPM | None = None,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
 ) -> None:
     """Plotting utils for signals
@@ -87,4 +88,4 @@ def plot(
         signal = compile(wave_func, duration_in_sec, sample_rate)
         plt.plot(x_axis, signal)
         plt.grid(True)
-    plt.show()  
+    plt.show()
