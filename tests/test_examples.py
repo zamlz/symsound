@@ -66,6 +66,19 @@ def test_classic_synths_builds_a_filtered_signal_without_playing(
     assert ns["w2"].free_symbols
 
 
+def test_classic_synths_filter_attenuates_440_hz_by_the_expected_amount(
+    fake_sounddevice, tmp_path, monkeypatch
+):
+    ns = run_example("classic_synths", fake_sounddevice, tmp_path, monkeypatch)
+    out = compile(ns["w2"], 1.0)
+    assert np.isfinite(out).all()
+    # 440 Hz through a cutoff of about 150 Hz: gain 1/sqrt(1 + (440/150)^2)
+    # = 0.32, so the RMS of a unit sine (0.707) drops to about 0.23
+    rms = np.sqrt((out[DEFAULT_SAMPLE_RATE // 4 :] ** 2).mean())
+    assert rms == pytest.approx(0.23, rel=0.1)
+    assert np.abs(out).max() < 0.5
+
+
 def test_kick_writes_its_wav_file(fake_sounddevice, tmp_path, monkeypatch):
     run_example("kick", fake_sounddevice, tmp_path, monkeypatch)
     info = sf.info(tmp_path / "beat.wav")

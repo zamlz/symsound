@@ -13,7 +13,10 @@ authors = [
 dependencies = [
   "matplotlib",
   "numpy",
+  "scipy",
   "sounddevice",
+  "scipy",
+  "scipy.*",
   "soundfile",
   "sympy",
   "sympy.*"
@@ -71,6 +74,8 @@ ignore = ["SIM108", "SIM300"]
 [[tool.mypy.overrides]]
 module = [
   "sounddevice",
+  "scipy",
+  "scipy.*",
   "soundfile",
   "sympy",
   "sympy.*"
