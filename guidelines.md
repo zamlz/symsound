@@ -340,7 +340,7 @@ assertions against [section 4](#4-how-we-test) is still your job.
 ## 10. Mutation check
 
 100% coverage proves code ran, not that tests would notice it being wrong.
-`tools/mutation_check.py` injects about thirty deliberate bugs (an inverted
+`tools/mutation_check.py` injects about fifty deliberate bugs (an inverted
 slope, a wrong sample rate, a dropped guard, a typo in the note table) one at
 a time and confirms the suite fails for each.
 
@@ -354,7 +354,15 @@ nix develop -c python tools/mutation_check.py
   new behavior in the `MUTANTS` list: `(label, file, old_text, new_text)`.
 - The script restores every file it touches. If it is interrupted, check
   `git status` and `git diff src` before doing anything else.
-- It takes several minutes, so it is not part of `nix flake check`.
+- Each mutant runs only the tests mapped to its source file in `FAST_TESTS`
+  (seconds each), and the whole suite only when those miss it, so all fifty
+  take about three minutes. A mutant in a new source file needs an entry in
+  `FAST_TESTS` (`tests/test_mutation_tool.py` checks).
+- `--rotate N` runs a different N mutants each day. GitHub runs it from
+  `.github/workflows/mutation.yml`: nightly, a rotating 8, and only when
+  `src/` or `tests/` changed since the last green run; every Sunday, all of
+  them; or on demand from the Actions tab.
+- It is not part of `nix flake check`.
 
 ## 11. Code style and dependencies
 

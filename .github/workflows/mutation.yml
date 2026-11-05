@@ -1,7 +1,12 @@
 name: mutation
 
+# Proves the tests catch bugs by breaking the code on purpose (see
+# tools/mutation_check.py). Each mutant runs only its own tests, so the whole
+# set takes minutes, not hours.
+#   nightly      a rotating handful of mutants, and only if the code changed
+#   Sundays      every mutant
+#   on demand    from the Actions tab, optionally filtered by label
 on:
-  # Nightly. A surviving mutant fails the run, which GitHub emails to you
   schedule:
     - cron: "0 3 * * *"
   workflow_dispatch:
@@ -15,16 +20,42 @@ jobs:
   mutation:
     # Scheduled runs only happen on the default branch
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 120
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Decide what to run
+        id: plan
+        run: |
+          args=""
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            last=$(gh run list --workflow mutation --status success --limit 1 \
+              --json headSha --jq '.[0].headSha // ""')
+            if [ "$(date -u +%u)" = "7" ]; then
+              echo "Sunday: every mutant"
+            elif [ -n "$last" ] && git cat-file -e "$last" 2>/dev/null \
+              && git diff --quiet "$last" HEAD -- src tests tools/mutation_check.py; then
+              echo "Nothing changed since the last green run ($last): skipping"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            else
+              args="--rotate 8"
+            fi
+          fi
+          echo "args=$args" >> "$GITHUB_OUTPUT"
       - uses: cachix/install-nix-action@v31
+        if: steps.plan.outputs.skip != 'true'
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
-      - run: |
-          # shellcheck disable=SC2086
-          # (the filters are separate words on purpose)
-          nix develop -c python tools/mutation_check.py $FILTERS
+      - name: Mutation check
+        if: steps.plan.outputs.skip != 'true'
         env:
+          ARGS: ${{ steps.plan.outputs.args }}
           FILTERS: ${{ inputs.filters }}
+        run: |
+          # shellcheck disable=SC2086
+          # (the arguments are separate words on purpose)
+          nix develop -c python tools/mutation_check.py $ARGS $FILTERS

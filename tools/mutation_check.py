@@ -6,9 +6,17 @@ runs the test suite. A mutant is KILLED when the suite fails, SURVIVED when
 every test still passes, which means a real bug of that shape could slip
 through. See guidelines.md for when to run this and how to react.
 
-Usage: python tools/mutation_check.py [label-substring ...]
+Each mutant first runs only the tests that cover its source file, which takes
+seconds. If those miss it, the whole suite runs before the mutant is declared a
+survivor, so the shortcut can never hide a real gap, it can only be slower.
+
+Usage: python tools/mutation_check.py [--rotate N] [label-substring ...]
+
+  --rotate N   run only N mutants, a different N each day (for nightly runs
+               that cannot afford all of them); every mutant comes round
 """
 
+import datetime
 import os
 import signal
 import subprocess
@@ -328,15 +336,26 @@ MUTANTS = [
 ]
 
 
+# The tests that cover each source file. A mutant is tried against these first
+FAST_TESTS = {
+    "src/daw/envelope.py": ["tests/test_envelope.py"],
+    "src/daw/waves/time.py": ["tests/test_time.py"],
+    "src/daw/waves/basic.py": ["tests/test_basic_waves.py"],
+    "src/daw/waves/utils.py": ["tests/test_utils.py", "tests/test_plotting.py"],
+    "src/daw/filters.py": ["tests/test_filters.py"],
+    "src/daw/constants.py": ["tests/test_constants.py"],
+}
+
 DOCS_FRESHNESS_TEST = (
     "tests/test_docs.py::test_docs_are_up_to_date_with_what_their_code_produces"
 )
 
 
-def run_suite():
+def run_suite(tests=None):
+    """Run `tests` (default: the whole suite). Returns (failed, first failure)"""
     env = dict(os.environ, HYPOTHESIS_PROFILE="ci")
     command = [sys.executable, "-m", "pytest", "-x", "-q", "--no-cov"]
-    command += ["-p", "no:cacheprovider", "tests"]
+    command += ["-p", "no:cacheprovider", *(tests or ["tests"])]
     # The docs freshness test rebuilds every graph, so it would "kill" any
     # mutant that changes a picture. That says nothing about whether the unit
     # tests notice, which is what this tool measures.
@@ -358,10 +377,25 @@ def run_suite():
     return result.returncode != 0, failures[0] if failures else ""
 
 
-def main(filters):
+def rotation(mutants, count, today=None):
+    """`count` mutants for today; consecutive days cover the list in turn"""
+    if count >= len(mutants):
+        return mutants
+    day = (today or datetime.date.today()).toordinal()
+    return [mutants[(day * count + i) % len(mutants)] for i in range(count)]
+
+
+def main(argv):
     # Let the `finally` below restore the source if this is killed
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(130))
-    mutants = [m for m in MUTANTS if not filters or any(f in m[0] for f in filters)]
+    rotate = None
+    if "--rotate" in argv:
+        at = argv.index("--rotate")
+        rotate = int(argv[at + 1])
+        argv = argv[:at] + argv[at + 2 :]
+    mutants = [m for m in MUTANTS if not argv or any(f in m[0] for f in argv)]
+    if rotate:
+        mutants = rotation(mutants, rotate)
     problems = []
     for label, relative, old, new in mutants:
         path = ROOT / relative
@@ -372,11 +406,16 @@ def main(filters):
             continue
         path.write_text(original.replace(old, new, 1))
         try:
-            killed, first_failure = run_suite()
+            killed, first_failure = run_suite(FAST_TESTS.get(relative))
+            note = ""
+            if not killed and relative in FAST_TESTS:
+                # The usual tests missed it: ask the whole suite before giving up
+                killed, first_failure = run_suite()
+                note = " (only the full suite noticed)"
         finally:
             path.write_text(original)
         status = "KILLED  " if killed else "SURVIVED"
-        print(f"{status}  {label}   {first_failure[:80]}", flush=True)
+        print(f"{status}  {label}   {first_failure[:80]}{note}", flush=True)
         if not killed:
             problems.append(label)
     print(f"\n{len(mutants) - len(problems)}/{len(mutants)} mutants killed")
