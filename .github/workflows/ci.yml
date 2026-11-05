@@ -23,5 +23,5 @@ jobs:
             experimental-features = nix-command flakes
       - run: nix flake check --print-build-logs
 
-# Mutation checking takes a long time (about a minute per mutant), so it runs
-# on demand from the Actions tab (workflow "mutation") instead of on every push
+# Mutation checking takes a long time (about a minute per mutant), so it has its
+# own workflow, mutation.yml, which runs nightly instead of on every push

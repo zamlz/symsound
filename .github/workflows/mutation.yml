@@ -1,6 +1,9 @@
 name: mutation
 
 on:
+  # Nightly. A surviving mutant fails the run, which GitHub emails to you
+  schedule:
+    - cron: "0 3 * * *"
   workflow_dispatch:
     inputs:
       filters:
@@ -10,6 +13,7 @@ on:
 
 jobs:
   mutation:
+    # Scheduled runs only happen on the default branch
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
