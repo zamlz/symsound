@@ -15,11 +15,13 @@
     # pyproject.toml file without redefining them here?
     pythonEnv = pkgs: pkgs.python3.withPackages (ps: with ps; [
       ipdb
+      hypothesis
       ipython
       matplotlib
       mypy
       numpy
       pytest
+      pytest-cov
       scipy
       sounddevice
       soundfile
@@ -47,6 +49,8 @@
       # Run $script in a writable copy of the repo
       mkCheck = name: script: pkgs.runCommand "daw-${name}" {
         nativeBuildInputs = [ (pythonEnv pkgs) pkgs.ruff ];
+        # Reproducible property-based tests (see tests/conftest.py)
+        HYPOTHESIS_PROFILE = "ci";
       } ''
         cp -r --no-preserve=mode ${./.} repo
         cd repo

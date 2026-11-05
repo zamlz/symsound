@@ -22,9 +22,11 @@ dependencies = [
 [project.optional-dependencies]
 develop = [
   "ipdb",
+  "hypothesis",
   "ipython",
   "mypy",
   "pytest",
+  "pytest-cov",
   "ruff"
 ]
 
@@ -35,6 +37,23 @@ include = ["daw*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+addopts = "--strict-markers --cov=daw --cov-branch --cov-report=term-missing"
+markers = [
+  "slow: runs the full example scripts",
+]
+filterwarnings = [
+  "error",
+  # mpmath (via sympy) uses a function deprecated in Python 3.14
+  "ignore:bitcount function is deprecated:DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["daw"]
+
+[tool.coverage.report]
+show_missing = true
+# Every line and branch of the library is tested; do not lower this
+fail_under = 100
 
 [tool.ruff]
 line-length = 88
