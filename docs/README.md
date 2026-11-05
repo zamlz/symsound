@@ -15,7 +15,10 @@ implemented. Read them in order the first time, then use them as reference.
 | [`kick.py` walkthrough](kick-walkthrough.md) | The whole example explained line by line |
 | [Gotchas](gotchas.md) | Limits and surprises worth knowing before they bite |
 
-Every `python` code block in these pages is run by the test suite
-(`tests/test_docs.py`), so the examples stay correct. The blocks in a page share
-one namespace and run top to bottom, so later blocks may use names defined by
-earlier ones on the same page.
+The code blocks in these pages are real. They are run by
+[mdutils](https://github.com/zamlz/mdutils) (`md code`), which writes what they
+print under them, and the graphs are drawn by the blocks themselves with `plot`
+and `spectrogram`. Each block runs on its own in a fresh Python, so every block
+starts with its imports and you can copy any one of them into a file and run it.
+`nix flake check` re-runs them all and fails if the committed output or graphs
+differ. To regenerate after a change: `nix develop -c python tools/build_docs.py`.

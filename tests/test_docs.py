@@ -1,16 +1,24 @@
 """The documentation in docs/ is tested like code
 
-Every python block is executed, so examples cannot rot. The blocks of one page
-share a namespace and run in order. The kick.py walkthrough must quote the
-real example verbatim. Every public name must be documented.
+docs/ pages are processed by `md` (github.com/zamlz/mdutils): python blocks
+followed by an `md-code` comment are executed, their output is written back
+under them, and they draw the graphs in docs/img/. `python tools/build_docs.py`
+does that for every page, and `--check` fails when anything is stale.
+
+These tests check the structure of the pages (cheap, no md needed) and, when
+md is installed, run the real thing. The flake runs the md part as its own
+check, `docs`, because the pytest check has no md.
 """
 
+import ast
+import builtins
+import importlib.util
 import re
-import runpy
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
-import numpy as np
 import pytest
 
 from test_policy import public_api
@@ -18,14 +26,36 @@ from test_policy import public_api
 ROOT = Path(__file__).parent.parent
 DOCS = ROOT / "docs"
 PAGES = sorted(DOCS.glob("*.md"))
-BLOCK = re.compile(r"^```python\n(.*?)^```", re.S | re.M)
+KICK = (ROOT / "examples" / "kick.py").read_text()
+
+FENCED_PYTHON = re.compile(
+    r"^```python([^\n]*)\n(.*?)^```\n(<!-- md-code: ([^>]*) -->)?", re.S | re.M
+)
+DIRECTIVE_FIELD = re.compile(r'(\w+)=(?:"([^"]*)"|(\d+))')
 
 # Implementation details that users never call
 INTERNAL = {"FloatEnum"}
 
 
-def blocks(page):
-    return BLOCK.findall(page.read_text())
+def python_blocks(page):
+    """(info string, code, directive fields or None) of every python block"""
+    found = []
+    for info, code, _, directive in FENCED_PYTHON.findall(page.read_text()):
+        fields = None
+        if directive:
+            fields = {k: a or b for k, a, b in DIRECTIVE_FIELD.findall(directive)}
+        found.append((info.strip(), code, fields))
+    return found
+
+
+def load_build_docs():
+    spec = importlib.util.spec_from_file_location(
+        "build_docs", ROOT / "tools" / "build_docs.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["build_docs"] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_there_are_docs_to_check():
@@ -33,73 +63,204 @@ def test_there_are_docs_to_check():
     assert {"README.md", "concepts.md", "kick-walkthrough.md"} <= names
 
 
-@pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
-def test_every_python_block_runs(page, fake_sounddevice, tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("matplotlib.pyplot.show", lambda: None)  # no window
-    np.random.seed(0)
-    namespace = {"__name__": "__docs__"}
-    for number, code in enumerate(blocks(page), start=1):
-        try:
-            exec(compile(code, f"{page.name} block {number}", "exec"), namespace)
-        except Exception as error:
-            raise AssertionError(
-                f"{page.name} python block {number} failed: {error!r}\n{code}"
-            ) from error
+class TestCodeBlocks:
+    @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
+    def test_every_python_block_is_executed_quoted_or_marked_no_run(self, page):
+        for info, code, fields in python_blocks(page):
+            if fields is not None or "no-run" in info:
+                continue
+            assert code.strip() in KICK, (
+                f"{page.name}: a python block is neither run by md (add an "
+                f"md-code comment), quoted from examples/kick.py, nor marked "
+                f"`python no-run`:\n{code}"
+            )
+
+    @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
+    def test_executed_blocks_have_a_unique_id_and_run_python(self, page):
+        ids = []
+        for _, code, fields in python_blocks(page):
+            if fields is None:
+                continue
+            assert fields.get("id"), f"{page.name}: md-code needs an id\n{code}"
+            assert fields.get("bin") == "python3", f"{page.name}: bin must be python3"
+            ids.append(fields["id"])
+        assert len(ids) == len(set(ids)), f"{page.name} repeats a block id"
+
+    @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
+    def test_every_executed_block_is_self_contained(self, page):
+        # md runs each block in a fresh interpreter, so a block must import or
+        # define everything it uses
+        for _, code, fields in python_blocks(page):
+            if fields is None:
+                continue
+            bound, loaded = set(dir(builtins)), set()
+            for node in ast.walk(ast.parse(code)):
+                if isinstance(node, ast.Name):
+                    (loaded if isinstance(node.ctx, ast.Load) else bound).add(node.id)
+                elif isinstance(node, ast.Import | ast.ImportFrom):
+                    bound.update((a.asname or a.name).split(".")[0] for a in node.names)
+                elif isinstance(node, ast.arg):
+                    bound.add(node.arg)
+                elif isinstance(node, ast.FunctionDef | ast.ClassDef):
+                    bound.add(node.name)
+            assert loaded <= bound, (
+                f"{page.name}: uses {sorted(loaded - bound)}\n{code}"
+            )
+
+    @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
+    def test_recorded_output_has_no_tracebacks(self, page):
+        text = page.read_text()
+        assert "Traceback (most recent call last)" not in text
+        assert "Error: Code execution" not in text
 
 
-@pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
-def test_relative_links_point_at_real_pages(page):
-    for target in re.findall(r"\]\(([^)#:]+\.md)(?:#[^)]*)?\)", page.read_text()):
-        assert (page.parent / target).exists(), f"{page.name} links to {target}"
+class TestImages:
+    def test_every_referenced_image_exists(self):
+        build_docs = load_build_docs()
+        names = build_docs.referenced_images(DOCS)
+        assert names, "the docs should have graphs"
+        missing = [n for n in sorted(names) if not (DOCS / n).exists()]
+        assert not missing, f"run tools/build_docs.py: missing {missing}"
+
+    def test_no_image_is_left_unused(self):
+        build_docs = load_build_docs()
+        used = build_docs.referenced_images(DOCS)
+        unused = [
+            p.name for p in (DOCS / "img").glob("*.png") if f"img/{p.name}" not in used
+        ]
+        assert not unused, f"unused images: {unused}"
+
+    def test_images_are_real_pngs_of_a_sensible_size(self):
+        import matplotlib.pyplot as plt
+
+        for path in (DOCS / "img").glob("*.png"):
+            image = plt.imread(path)
+            assert image.shape[1] >= 600 and image.shape[0] >= 250, path.name
+            assert image[..., :3].std() > 0.03, f"{path.name} looks blank"
+
+    def test_every_image_has_alt_text(self):
+        for page in PAGES:
+            for alt in re.findall(r"!\[([^\]]*)\]\(img/", page.read_text()):
+                assert alt.strip(), f"{page.name} has an image without alt text"
 
 
-def test_the_index_lists_every_page():
-    index = (DOCS / "README.md").read_text()
-    missing = [p.name for p in PAGES if p.name != "README.md" and p.name not in index]
-    assert not missing, f"docs/README.md does not link {missing}"
+class TestLinks:
+    @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
+    def test_relative_links_point_at_real_pages(self, page):
+        for target in re.findall(r"\]\(([^)#:]+\.md)(?:#[^)]*)?\)", page.read_text()):
+            assert (page.parent / target).exists(), f"{page.name} links to {target}"
+
+    def test_the_index_lists_every_page(self):
+        index = (DOCS / "README.md").read_text()
+        others = [p.name for p in PAGES if p.name != "README.md"]
+        missing = [name for name in others if name not in index]
+        assert not missing, f"docs/README.md does not link {missing}"
 
 
-def test_every_public_function_and_class_is_documented():
-    text = "\n".join(p.read_text() for p in PAGES)
-    undocumented = [
-        f"{module}.{name}"
-        for module, name in public_api()
-        if name not in INTERNAL and not re.search(rf"\b{name}\b", text)
-    ]
-    assert not undocumented, f"add {undocumented} to the pages in docs/"
+class TestCoverage:
+    def test_every_public_function_and_class_is_documented(self):
+        text = "\n".join(p.read_text() for p in PAGES)
+        undocumented = [
+            f"{module}.{name}"
+            for module, name in public_api()
+            if name not in INTERNAL and not re.search(rf"\b{name}\b", text)
+        ]
+        assert not undocumented, f"add {undocumented} to the pages in docs/"
 
 
-def test_the_kick_walkthrough_quotes_the_real_example():
-    source = (ROOT / "examples" / "kick.py").read_text()
-    quoted = blocks(DOCS / "kick-walkthrough.md")
-    assert quoted
-    for code in quoted:
-        assert code.strip() in source, f"not in examples/kick.py:\n{code}"
+class TestKickWalkthrough:
+    def quoted(self):
+        return [
+            code
+            for info, code, fields in python_blocks(DOCS / "kick-walkthrough.md")
+            if fields is None
+        ]
+
+    def test_quotes_the_real_example(self):
+        assert self.quoted()
+        for code in self.quoted():
+            assert code.strip() in KICK, f"not in examples/kick.py:\n{code}"
+
+    def test_covers_the_whole_example(self):
+        # Every code line of kick.py (apart from blank lines, comments and the
+        # shebang) must appear in a quoted block, so edits to the example are
+        # noticed here and the docs get updated
+        quoted = "\n".join(self.quoted())
+        lines = [
+            line
+            for line in KICK.splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+        missing = [line for line in lines if line not in quoted]
+        assert not missing, f"docs/kick-walkthrough.md is missing {missing}"
+
+    def test_the_graph_blocks_load_the_example_without_playing_it(self):
+        # run_path without run_name="__main__" must build the signals only
+        assert 'if __name__ == "__main__":' in KICK
+        graph_blocks = [
+            code
+            for _, code, fields in python_blocks(DOCS / "kick-walkthrough.md")
+            if fields is not None
+        ]
+        assert graph_blocks
+        assert all("run_path" in code for code in graph_blocks)
 
 
-def test_the_kick_walkthrough_covers_the_whole_example():
-    # Every code line of kick.py (apart from blank lines, comments and the
-    # shebang) must appear in a quoted block, so edits to the example are
-    # noticed here and the docs get updated
-    quoted = "\n".join(blocks(DOCS / "kick-walkthrough.md"))
-    lines = [
-        line
-        for line in (ROOT / "examples" / "kick.py").read_text().splitlines()
-        if line.strip() and not line.lstrip().startswith("#")
-    ]
-    missing = [line for line in lines if line not in quoted]
-    assert not missing, f"docs/kick-walkthrough.md is missing {missing}"
+class TestBuildDocsTool:
+    @pytest.fixture
+    def tool(self):
+        return load_build_docs()
+
+    def test_finds_every_image_reference_on_a_line(self, tool, tmp_path):
+        (tmp_path / "a.md").write_text(
+            "![x](img/one.png) text ![y](img/two.png)\n[link](other.md)\n"
+        )
+        assert tool.referenced_images(tmp_path) == {"img/one.png", "img/two.png"}
+
+    def make(self, root, text, images):
+        (root / "img").mkdir(parents=True)
+        (root / "p.md").write_text(text)
+        for name, data in images.items():
+            (root / "img" / name).write_bytes(data)
+
+    def test_identical_trees_have_no_differences(self, tool, tmp_path):
+        for side in ("old", "new"):
+            self.make(tmp_path / side, "![a](img/a.png)\n", {"a.png": b"1"})
+        assert tool.differences(tmp_path / "old", tmp_path / "new") == []
+
+    def test_reports_stale_text_and_images_and_orphans(self, tool, tmp_path):
+        self.make(
+            tmp_path / "old",
+            "old text ![a](img/a.png)\n",
+            {"a.png": b"1", "orphan.png": b"2"},
+        )
+        self.make(tmp_path / "new", "new text ![a](img/a.png)\n", {"a.png": b"9"})
+        problems = "\n".join(tool.differences(tmp_path / "old", tmp_path / "new"))
+        assert "p.md: text is out of date" in problems
+        assert "img/a.png: the image is out of date" in problems
+        assert "img/orphan.png: no page uses this image" in problems
+
+    def test_reports_images_nothing_draws_and_images_not_committed(
+        self, tool, tmp_path
+    ):
+        self.make(
+            tmp_path / "old", "![a](img/a.png) ![b](img/b.png)\n", {"b.png": b"1"}
+        )
+        self.make(
+            tmp_path / "new", "![a](img/a.png) ![b](img/b.png)\n", {"a.png": b"1"}
+        )
+        problems = "\n".join(tool.differences(tmp_path / "old", tmp_path / "new"))
+        assert "img/a.png: not committed" in problems
+        assert "img/b.png: referenced but no block draws it" in problems
 
 
 @pytest.mark.slow
-def test_the_walkthrough_blocks_rebuild_the_example_signal(
-    fake_sounddevice, tmp_path, monkeypatch
-):
-    monkeypatch.chdir(tmp_path)
-    namespace = {"__name__": "__docs__"}
-    for code in blocks(DOCS / "kick-walkthrough.md"):
-        exec(code, namespace)
-    monkeypatch.setitem(sys.modules, "sounddevice", fake_sounddevice)
-    real = runpy.run_path(str(ROOT / "examples" / "kick.py"), run_name="__main__")
-    assert namespace["w"] == real["w"]
+@pytest.mark.skipif(shutil.which("md") is None, reason="md (mdutils) is not installed")
+def test_docs_are_up_to_date_with_what_their_code_produces():
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "tools" / "build_docs.py"), "--check"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr

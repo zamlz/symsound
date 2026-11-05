@@ -56,5 +56,8 @@ wet = sp.Min(1.0, 5 * sweep)
 
 w = dry + wet * (low_pass_filter(dry, cutoff) - dry)
 
-play(w, duration)
-save(w, duration, "beat.wav")
+# Only play and save when run as a script, so the signals above can be
+# imported (the docs do this to draw graphs of them)
+if __name__ == "__main__":
+    play(w, duration)
+    save(w, duration, "beat.wav")
