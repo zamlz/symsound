@@ -51,19 +51,19 @@ the limitations register ([section 13](#13-known-limitations-register)).
 Everything runs through the Nix dev shell, which provides Python, all
 dependencies, ruff and `PYTHONPATH=src`.
 
-| Task | Command |
-| --- | --- |
-| Everything CI runs | `nix flake check` |
-| One check | `nix build .#checks.x86_64-linux.pytest` (or `ruff`, `mypy`) |
-| Tests (fast loop) | `nix develop -c pytest` |
-| Tests without the slow example runs | `nix develop -c pytest -m "not slow"` |
-| One file or test | `nix develop -c pytest tests/test_envelope.py -k release` |
-| Tests without coverage output | `nix develop -c pytest --no-cov` |
-| Lint | `nix develop -c ruff check .` |
-| Format | `nix develop -c ruff format tests` (see [section 11](#11-code-style-and-dependencies)) |
-| Types | `nix develop -c mypy src/daw` |
-| Regenerate golden files | `UPDATE_GOLDEN=1 nix develop -c pytest tests/test_examples.py` |
-| Mutation check | `nix develop -c python tools/mutation_check.py` |
+| Task                                | Command                                                                                |
+| ----------------------------------- | -------------------------------------------------------------------------------------- |
+| Everything CI runs                  | `nix flake check`                                                                      |
+| One check                           | `nix build .#checks.x86_64-linux.pytest` (or `ruff`, `mypy`)                           |
+| Tests (fast loop)                   | `nix develop -c pytest`                                                                |
+| Tests without the slow example runs | `nix develop -c pytest -m "not slow"`                                                  |
+| One file or test                    | `nix develop -c pytest tests/test_envelope.py -k release`                              |
+| Tests without coverage output       | `nix develop -c pytest --no-cov`                                                       |
+| Lint                                | `nix develop -c ruff check .`                                                          |
+| Format                              | `nix develop -c ruff format tests` (see [section 11](#11-code-style-and-dependencies)) |
+| Types                               | `nix develop -c mypy src/daw`                                                          |
+| Regenerate golden files             | `UPDATE_GOLDEN=1 nix develop -c pytest tests/test_examples.py`                         |
+| Mutation check                      | `nix develop -c python tools/mutation_check.py`                                        |
 
 Notes:
 

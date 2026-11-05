@@ -26,6 +26,14 @@ def envelope_function(a, d, s, r):
     return call
 
 
+def away_from_stage_edges(a, d, active):
+    """sympy stores Floats with 15 significant digits, so a hold that lands
+    within ~1e-12 of a stage edge can fall on either side of it. That only
+    matters where the level jumps (e.g. decay 0, sustain < 1), which makes the
+    release start level ill-defined there. Not a behaviour worth pinning."""
+    assume(abs(active - a) > 1e-9 and abs(active - (a + d)) > 1e-9)
+
+
 def sample_times(a, d, r, active):
     end = active + r + 1.0
     base = np.linspace(-0.5, end, 401)
@@ -130,6 +138,7 @@ class TestReleaseFromAnyStage:
 class TestAgainstReferenceImplementation:
     @given(stage, stage, levels, stage, holds, st.data())
     def test_matches_independent_definition(self, a, d, s, r, active, data):
+        away_from_stage_edges(a, d, active)
         t = np.array(
             data.draw(
                 st.lists(
@@ -147,6 +156,7 @@ class TestAgainstReferenceImplementation:
 
     @given(stage, stage, levels, stage, holds)
     def test_dense_grid_matches_reference(self, a, d, s, r, active):
+        away_from_stage_edges(a, d, active)
         t = sample_times(a, d, r, active)
         np.testing.assert_allclose(
             envelope_function(a, d, s, r)(t, active),
