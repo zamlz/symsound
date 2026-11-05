@@ -1,4 +1,3 @@
-from typing import Union
 
 import sympy as sp
 

@@ -1,4 +1,3 @@
-from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,7 +6,7 @@ import soundfile as sf
 import sympy as sp
 from sympy.core.expr import Expr
 
-from daw.constants import DEFAULT_SAMPLE_RATE, Note
+from daw.constants import DEFAULT_SAMPLE_RATE
 from daw.waves.time import BPM, TIME
 
 WHITE_NOISE = sp.symbols('white_noise', real=True)

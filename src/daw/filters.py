@@ -1,9 +1,7 @@
-from typing import Union
 
 import sympy as sp
 from sympy.core.expr import Expr
 
-from daw.constants import Note
 from daw.waves.time import TIME
 
 

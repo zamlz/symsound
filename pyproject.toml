@@ -47,7 +47,11 @@ ignore = ["SIM108", "SIM300"]
 
 [tool.ruff.lint.per-file-ignores]
 # Example scripts import freely and run at import time
-"src/*.py" = ["F401", "E402"]
+"src/c_major_shimmer.py" = ["F401", "E402"]
+"src/classic_synths.py" = ["F401", "E402"]
+"src/kick.py" = ["F401", "E402"]
+"src/ode_to_joy.py" = ["F401", "E402"]
+"src/weighted_blend_test.py" = ["F401", "E402"]
 
 [[tool.mypy.overrides]]
 module = [
