@@ -78,3 +78,16 @@ class TestRotation:
     def test_picks_are_distinct(self, count):
         picked = self.pick(739123, count)
         assert len(set(picked)) == len(picked)
+
+
+def test_the_full_suite_fallback_skips_the_test_that_fails_for_every_mutant():
+    # Regression: that test failing made every mutant look "killed" when the
+    # fast tests had missed it
+    assert tool.STALE_TEXT_TEST.endswith(
+        "::test_every_mutant_text_is_still_in_the_source"
+    )
+    assert tool.STALE_TEXT_TEST.split("::")[0] == "tests/test_mutation_tool.py"
+    assert (
+        "test_every_mutant_text_is_still_in_the_source"
+        in (ROOT / "tests" / "test_mutation_tool.py").read_text()
+    )

@@ -4,6 +4,8 @@ These are plain NumPy, with no window or toolkit, so the same code draws a
 finished recording and a live keyboard, and can be tested exactly.
 """
 
+from typing import Protocol
+
 import numpy as np
 import numpy.typing as npt
 from numpy.lib.stride_tricks import sliding_window_view
@@ -115,3 +117,73 @@ def peak_envelope(samples: npt.ArrayLike, width: int) -> tuple[Samples, Samples]
     low = np.array([x[a:b].min() for a, b in zip(starts, stops, strict=True)])
     high = np.array([x[a:b].max() for a, b in zip(starts, stops, strict=True)])
     return low, high
+
+
+class _Stream(Protocol):
+    """What `LiveSpectrogram` reads: a `daw.live.RingBuffer` is one"""
+
+    capacity: int
+
+    @property
+    def written(self) -> int: ...
+
+    def latest(self, count: int) -> Samples: ...
+
+
+class LiveSpectrogram:
+    """A spectrogram that grows as samples arrive, for a display of live sound.
+
+    `update(stream)` looks at what has been written to the stream (a
+    `RingBuffer`) since the last time and adds a column for every `HOP`
+    samples. The columns are the same as `spectrogram_columns` would give for
+    everything written so far, so a live display and a finished one agree.
+    `levels` holds the newest `max_columns` of them, oldest first. If more
+    arrives between two updates than the stream can hold, the oldest part is
+    skipped."""
+
+    def __init__(
+        self,
+        sample_rate: int,
+        rows: int = 256,
+        max_columns: int = 1024,
+        *,
+        window: int = WINDOW,
+        hop: int = HOP,
+    ) -> None:
+        if max_columns < 1:
+            raise ValueError("max_columns must be positive")
+        if window < 2 or hop < 1 or window % hop:
+            raise ValueError("window must be a whole number of hops")
+        self.sample_rate = sample_rate
+        self.rows = rows
+        self.max_columns = max_columns
+        self.window = window
+        self.hop = hop
+        self._levels = np.zeros((0, rows))
+        self._hops_seen = 0
+
+    @property
+    def levels(self) -> Samples:
+        return self._levels
+
+    def update(self, stream: _Stream) -> int:
+        """Add the columns for the new samples; returns how many were added"""
+        hop, window = self.hop, self.window
+        hops_now = stream.written // hop
+        fresh = hops_now - self._hops_seen
+        if fresh <= 0:
+            return 0
+        self._hops_seen = hops_now
+        spare = stream.written % hop  # samples after the last whole hop
+        room = (stream.capacity - spare - (window - hop)) // hop
+        if room < 1:
+            raise ValueError("the stream is too small to hold one window")
+        fresh = min(fresh, room)
+        span = (window - hop) + fresh * hop
+        # The newest column's window must end on a whole hop, not on `written`
+        samples = stream.latest(span + spare)[:span]
+        columns = spectrogram_columns(
+            samples, self.sample_rate, self.rows, window=window, hop=hop
+        )[-fresh:]
+        self._levels = np.concatenate([self._levels, columns])[-self.max_columns :]
+        return fresh

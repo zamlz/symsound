@@ -13,6 +13,7 @@ implemented. Read them in order the first time, then use them as reference.
 | [Combining signals](combining.md) | Mixing, gating, fading, crossfading, the building blocks of `house_with_low_pass.py` |
 | [Playing, saving and plotting](output.md) | `compile`, `play`, `save`, `plot` |
 | [Visualizing a signal](visualizing.md) | `visualize`, `snapshot`: a window with a scope, a spectrogram and a seek bar; `Player` |
+| [A playable keyboard](keyboard.md) | `keyboard`, `keyboard_snapshot`: play a signal with your computer's keys; `LiveSpectrogram` |
 | [Live playback](live.md) | `NoteSource`, `Mixer`, `Instrument`, `RingBuffer`, `LiveOutput`: notes rendered in real time |
 | [`house_with_low_pass.py` walkthrough](house-with-low-pass-walkthrough.md) | The whole example explained line by line |
 | [Gotchas](gotchas.md) | Limits and surprises worth knowing before they bite |

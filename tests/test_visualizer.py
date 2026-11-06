@@ -18,17 +18,22 @@ from hypothesis import strategies as st
 
 import daw
 from daw import visualizer
-from daw.analysis import HOP, row_of_frequency
-from daw.live import Player
-from daw.visualizer import (
+from daw._draw import (
+    MARGIN,
+    PIXELS_PER_COLUMN,
     PLAYED,
     PLAYHEAD,
     SCOPE_COLOUR,
+    SPECTROGRAM_ROWS,
     _colourise,
-    _format_time,
     _inside,
-    _layout_for,
     _run,
+)
+from daw.analysis import HOP, row_of_frequency
+from daw.live import Player
+from daw.visualizer import (
+    _format_time,
+    _layout_for,
     _seek_fraction,
     _Viewer,
     snapshot,
@@ -149,8 +154,8 @@ class TestLayout:
     def test_the_wide_parts_span_the_window(self):
         layout = _layout_for(1000, 640)
         for rect in (layout.scope, layout.spectrogram, layout.seek):
-            assert rect[0] == visualizer.MARGIN
-            assert rect[2] == 1000 - 2 * visualizer.MARGIN
+            assert rect[0] == MARGIN
+            assert rect[2] == 1000 - 2 * MARGIN
 
     def test_the_spectrogram_gets_the_most_room(self):
         layout = _layout_for(1000, 640)
@@ -401,6 +406,17 @@ class TestDrawing:
         assert len(rows_with_wave(flat_rows)) <= 2
         assert abs(rows_with_wave(flat_rows).mean() - h / 2) < 2
 
+    def test_positive_samples_are_drawn_above_the_middle_line(self):
+        viewer, up = self.draw(sp.Float(0.5), at=2.0)
+        _, down = self.draw(sp.Float(-0.5), at=2.0)
+        x, y, w, h = viewer.layout.scope
+        for shot, above in ((up, True), (down, False)):
+            area = pygame.surfarray.array3d(shot)[x : x + w, y : y + h]
+            rows = np.flatnonzero(
+                (area == np.array(SCOPE_COLOUR)).all(axis=2).any(axis=0)
+            )
+            assert (rows.mean() < h / 2) == above
+
     def test_the_scope_shows_the_right_number_of_cycles(self):
         # 40 ms of a 200 Hz tone is eight cycles
         viewer, surface = self.draw(sine(200), at=2.0)
@@ -431,8 +447,8 @@ class TestDrawing:
         column = pixels[x + w - 40, y : y + h].astype(int).sum(axis=1)
         brightest = h - 1 - int(np.argmax(column))  # counted up from the bottom
         expected = (
-            row_of_frequency(1000, visualizer.SPECTROGRAM_ROWS, RATE)
-            / (visualizer.SPECTROGRAM_ROWS - 1)
+            row_of_frequency(1000, SPECTROGRAM_ROWS, RATE)
+            / (SPECTROGRAM_ROWS - 1)
             * (h - 1)
         )
         assert brightest == pytest.approx(expected, abs=6)
@@ -463,7 +479,7 @@ class TestDrawing:
         lit = np.flatnonzero(area.sum(axis=2).max(axis=1) > 300) + 120
         # The tone began about eight columns ago, so it fills the right edge
         # of the picture and no more than that
-        assert lit.min() > w - 3 - 14 * visualizer.PIXELS_PER_COLUMN
+        assert lit.min() > w - 3 - 14 * PIXELS_PER_COLUMN
         assert lit.max() >= w - 8
 
     def test_the_spectrogram_has_a_playhead_at_its_right_edge(self):
@@ -722,9 +738,11 @@ class TestOptionalDependency:
     ):
         import importlib
 
+        from daw import _draw
+
         monkeypatch.setitem(sys.modules, "pygame", None)
         with pytest.raises(ImportError, match=r"daw\[gui\]"):
-            importlib.reload(visualizer)
+            importlib.reload(_draw)
 
     def test_the_rest_of_the_package_never_imports_pygame(self):
         code = (

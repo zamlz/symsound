@@ -94,6 +94,8 @@ src/daw/               the library
   filters.py           low_pass_filter (first-order IIR on the sample grid)
   analysis.py          spectrogram_columns, peak_envelope (pure NumPy, no GUI)
   visualizer.py        visualize, snapshot (pygame, optional: daw[gui])
+  keyboard.py          keyboard, keyboard_snapshot (pygame, optional: daw[gui])
+  _draw.py             private drawing shared by the two windows
   live.py              real-time engine: NoteSource, Mixer, Instrument, RingBuffer, LiveOutput
   waves/basic.py       sine, square, triangle, sawtooth, sawtooth_v2, trigger
   waves/time.py        TIME symbol, BPM
@@ -343,7 +345,7 @@ assertions against [section 4](#4-how-we-test) is still your job.
 ## 10. Mutation check
 
 100% coverage proves code ran, not that tests would notice it being wrong.
-`tools/mutation_check.py` injects about seventy deliberate bugs (an inverted
+`tools/mutation_check.py` injects about ninety deliberate bugs (an inverted
 slope, a wrong sample rate, a dropped guard, a typo in the note table) one at
 a time and confirms the suite fails for each.
 

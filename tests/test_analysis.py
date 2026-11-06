@@ -8,6 +8,7 @@ from hypothesis import strategies as st
 from daw.analysis import (
     HOP,
     WINDOW,
+    LiveSpectrogram,
     frequency_of_row,
     peak_envelope,
     row_of_frequency,
@@ -201,3 +202,104 @@ class TestPeakEnvelope:
     def test_a_non_positive_width_is_refused(self):
         with pytest.raises(ValueError, match="width"):
             peak_envelope([1, 2, 3], 0)
+
+
+class TestLiveSpectrogram:
+    def stream(self, capacity=16384):
+        from daw.live import RingBuffer
+
+        return RingBuffer(capacity)
+
+    def test_it_starts_empty(self):
+        live = LiveSpectrogram(RATE, rows=32)
+        assert live.levels.shape == (0, 32)
+
+    def test_nothing_new_adds_nothing(self):
+        live, stream = LiveSpectrogram(RATE, rows=16), self.stream()
+        assert live.update(stream) == 0
+        stream.write(np.zeros(HOP - 1))
+        assert live.update(stream) == 0
+        assert live.levels.shape[0] == 0
+
+    def test_a_column_arrives_for_every_hop_written(self):
+        live, stream = LiveSpectrogram(RATE, rows=16), self.stream()
+        stream.write(tone(500, 0.2))  # 1600 samples = 3 hops and a bit
+        assert live.update(stream) == 3
+        stream.write(np.zeros(HOP))
+        assert live.update(stream) == 1
+        assert live.levels.shape == (4, 16)
+
+    @given(
+        st.lists(st.integers(min_value=0, max_value=1500), min_size=1, max_size=10),
+        st.integers(min_value=0, max_value=1000),
+    )
+    def test_it_agrees_with_the_finished_spectrogram_of_the_same_sound(
+        self, sizes, seed
+    ):
+        # However the samples arrive, the columns are those of the whole signal
+        rng = np.random.default_rng(seed)
+        signal = rng.uniform(-1, 1, sum(sizes))
+        live, stream = LiveSpectrogram(RATE, rows=24, max_columns=10_000), self.stream()
+        position = 0
+        for size in sizes:
+            stream.write(signal[position : position + size])
+            position += size
+            live.update(stream)
+        whole = spectrogram_columns(signal, RATE, 24)
+        finished = len(signal) // HOP
+        np.testing.assert_allclose(live.levels, whole[:finished], atol=1e-9)
+
+    def test_a_tone_lights_its_row_as_it_arrives(self):
+        live, stream = LiveSpectrogram(RATE, rows=128), self.stream()
+        stream.write(tone(1000, 1.0))
+        live.update(stream)
+        expected = row_of_frequency(1000, 128, RATE)
+        assert np.argmax(live.levels[-1]) == pytest.approx(expected, abs=2.5)
+
+    def test_only_the_newest_columns_are_kept(self):
+        live, stream = LiveSpectrogram(RATE, rows=8, max_columns=5), self.stream()
+        stream.write(np.arange(HOP * 12) % 7 / 7.0)
+        live.update(stream)
+        whole = spectrogram_columns(np.arange(HOP * 12) % 7 / 7.0, RATE, 8)
+        assert live.levels.shape == (5, 8)
+        np.testing.assert_allclose(live.levels, whole[7:12], atol=1e-9)
+
+    def test_if_more_arrives_than_the_stream_holds_the_oldest_part_is_skipped(self):
+        capacity = 4096
+        live, stream = LiveSpectrogram(RATE, rows=8), self.stream(capacity)
+        signal = np.random.default_rng(3).uniform(-1, 1, HOP * 40)
+        stream.write(signal)
+        added = live.update(stream)
+        assert 0 < added < 40
+        whole = spectrogram_columns(signal, RATE, 8)
+        # What it did add is the end of the finished spectrogram
+        np.testing.assert_allclose(live.levels, whole[-added:], atol=1e-9)
+        # ...and it carries on correctly from there
+        more = np.random.default_rng(4).uniform(-1, 1, HOP * 2)
+        stream.write(more)
+        assert live.update(stream) == 2
+        everything = spectrogram_columns(np.concatenate([signal, more]), RATE, 8)
+        np.testing.assert_allclose(live.levels[-2:], everything[-2:], atol=1e-9)
+
+    def test_a_stream_too_small_for_one_window_is_refused(self):
+        live, stream = LiveSpectrogram(RATE, rows=8), self.stream(1024)
+        stream.write(np.zeros(HOP * 3))
+        with pytest.raises(ValueError, match="too small"):
+            live.update(stream)
+
+    def test_window_and_hop_can_change(self):
+        live = LiveSpectrogram(RATE, rows=8, window=512, hop=256)
+        stream = self.stream(4096)
+        signal = np.random.default_rng(1).uniform(-1, 1, 256 * 9)
+        stream.write(signal)
+        live.update(stream)
+        whole = spectrogram_columns(signal, RATE, 8, window=512, hop=256)
+        np.testing.assert_allclose(live.levels, whole, atol=1e-9)
+
+    @pytest.mark.parametrize(
+        "options",
+        [{"max_columns": 0}, {"window": 1000, "hop": 512}, {"window": 1}, {"hop": 0}],
+    )
+    def test_nonsense_settings_are_refused(self, options):
+        with pytest.raises(ValueError):
+            LiveSpectrogram(RATE, **options)

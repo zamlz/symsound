@@ -496,15 +496,96 @@ MUTANTS = [
     ),
     (
         "spectrogram is drawn upside down",
-        "src/daw/visualizer.py",
-        "make_surface(window[:, ::-1, :])",
-        "make_surface(window)",
+        "src/daw/_draw.py",
+        "make_surface(picture[:, ::-1, :])",
+        "make_surface(picture)",
     ),
     (
         "time format drops the tenths",
         "src/daw/visualizer.py",
         'return f"{minutes}:{rest // 10:02d}.{rest % 10}"',
         'return f"{minutes}:{rest // 10:02d}.0"',
+    ),
+    # live spectrogram
+    (
+        "live spectrogram window does not end on a hop",
+        "src/daw/analysis.py",
+        "samples = stream.latest(span + spare)[:span]",
+        "samples = stream.latest(span)",
+    ),
+    (
+        "live spectrogram ignores a stalled display",
+        "src/daw/analysis.py",
+        "fresh = min(fresh, room)",
+        "fresh = fresh",
+    ),
+    (
+        "live spectrogram keeps every column",
+        "src/daw/analysis.py",
+        "np.concatenate([self._levels, columns])[-self.max_columns :]",
+        "np.concatenate([self._levels, columns])",
+    ),
+    # keyboard
+    (
+        "keyboard note off by an octave",
+        "src/daw/keyboard.py",
+        'index = NOTES.index(Note[f"C{octave}"]) + semitone',
+        'index = NOTES.index(Note[f"C{octave}"]) + semitone + 12',
+    ),
+    (
+        "keyboard black keys wrong",
+        "src/daw/keyboard.py",
+        "BLACK = {1, 3, 6, 8, 10, 13, 15}",
+        "BLACK = {1, 3, 6, 8, 10, 13}",
+    ),
+    (
+        "keyboard z goes up",
+        "src/daw/keyboard.py",
+        "self.octave = max(self.octave - 1, FIRST_OCTAVE)",
+        "self.octave = min(self.octave + 1, LAST_OCTAVE)",
+    ),
+    (
+        "keyboard auto-repeat restarts the note",
+        "src/daw/keyboard.py",
+        "if note is None or finger in self.sounding:",
+        "if note is None:",
+    ),
+    (
+        "keyboard notes stick when focus is lost",
+        "src/daw/keyboard.py",
+        "            self.lift_all()  # the key-up would go to another window",
+        "            pass",
+    ),
+    (
+        "keyboard mouse does not slide between notes",
+        "src/daw/keyboard.py",
+        'if semitone != self.sounding["mouse"][1]:',
+        "if False:",
+    ),
+    (
+        "keyboard white key under the black one",
+        "src/daw/keyboard.py",
+        "for key in reversed(_piano_keys(rect)):",
+        "for key in _piano_keys(rect):",
+    ),
+    (
+        "keyboard display does not make the sound when silent",
+        "src/daw/keyboard.py",
+        "            self.ring.write(self.mixer.render(round(seconds * rate)))",
+        "            pass",
+    ),
+    # drawing
+    (
+        "spectrogram colours reversed",
+        "src/daw/_draw.py",
+        "return _PALETTE[np.round(clipped * 255).astype(int)]",
+        "return _PALETTE[255 - np.round(clipped * 255).astype(int)]",
+    ),
+    (
+        "scope is upside down",
+        "src/daw/_draw.py",
+        "points = [(x + i, middle - h) for i, h in enumerate(heights)]",
+        "points = [(x + i, middle + h) for i, h in enumerate(heights)]",
     ),
 ]
 
@@ -520,7 +601,14 @@ FAST_TESTS = {
     "src/daw/live.py": ["tests/test_live.py"],
     "src/daw/analysis.py": ["tests/test_analysis.py"],
     "src/daw/visualizer.py": ["tests/test_visualizer.py"],
+    "src/daw/keyboard.py": ["tests/test_keyboard.py"],
+    "src/daw/_draw.py": ["tests/test_visualizer.py", "tests/test_keyboard.py"],
 }
+
+# Fails for every mutant by design (the mutated text is no longer in the file)
+STALE_TEXT_TEST = (
+    "tests/test_mutation_tool.py::test_every_mutant_text_is_still_in_the_source"
+)
 
 DOCS_FRESHNESS_TEST = (
     "tests/test_docs.py::test_docs_are_up_to_date_with_what_their_code_produces"
@@ -533,9 +621,10 @@ def run_suite(tests=None):
     command = [sys.executable, "-m", "pytest", "-x", "-q", "--no-cov"]
     command += ["-p", "no:cacheprovider", *(tests or ["tests"])]
     # The docs freshness test rebuilds every graph, so it would "kill" any
-    # mutant that changes a picture. That says nothing about whether the unit
-    # tests notice, which is what this tool measures.
-    command += ["--deselect", DOCS_FRESHNESS_TEST]
+    # mutant that changes a picture, and the stale-text test fails for any
+    # mutant at all. Neither says whether the unit tests notice a bug, which
+    # is what this tool measures.
+    command += ["--deselect", DOCS_FRESHNESS_TEST, "--deselect", STALE_TEXT_TEST]
     result = subprocess.run(
         command,
         cwd=ROOT,
