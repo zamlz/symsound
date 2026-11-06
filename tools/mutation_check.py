@@ -367,7 +367,10 @@ MUTANTS = [
     (
         "live key auto-repeat restarts the note",
         "src/daw/live.py",
-        "if any(v.key == key and v.released_at is None for v in self._voices):\n                return",
+        (
+            "if any(v.key == key and v.released_at is None for v in self._voices):"
+            "\n                return"
+        ),
         "if False:\n                return",
     ),
     (
@@ -394,6 +397,115 @@ MUTANTS = [
         "        if self.tap is not None:\n            self.tap.write(samples)",
         "        if self.tap is None:\n            self.tap = None",
     ),
+    # analysis
+    (
+        "spectrogram scale is not decibels",
+        "src/daw/analysis.py",
+        "np.clip(1 + decibels / range_db, 0.0, 1.0)",
+        "np.clip(1 + decibels / (2 * range_db), 0.0, 1.0)",
+    ),
+    (
+        "spectrogram rows skip the loudest bin",
+        "src/daw/analysis.py",
+        "mixed[:, row] = np.maximum(mixed[:, row], covered)",
+        "mixed[:, row] = mixed[:, row]",
+    ),
+    (
+        "spectrogram columns lag the signal",
+        "src/daw/analysis.py",
+        "padded = np.concatenate([np.zeros(window - hop), x])",
+        "padded = np.concatenate([np.zeros(window), x])",
+    ),
+    (
+        "spectrogram row frequencies are linear",
+        "src/daw/analysis.py",
+        "return float(low * (high / low) ** (row / (rows - 1)))",
+        "return float(low + (high - low) * row / (rows - 1))",
+    ),
+    (
+        "peak envelope loses the lows",
+        "src/daw/analysis.py",
+        "low = np.array([x[a:b].min() for a, b in zip(starts, stops, strict=True)])",
+        "low = np.array([x[a:b].max() for a, b in zip(starts, stops, strict=True)])",
+    ),
+    # player
+    (
+        "player does not stop at the end",
+        "src/daw/live.py",
+        (
+            "            if self._position >= len(self.samples):\n"
+            "                self._playing = False"
+        ),
+        (
+            "            if self._position > len(self.samples):\n"
+            "                self._playing = False"
+        ),
+    ),
+    (
+        "player play from the end does not restart",
+        "src/daw/live.py",
+        (
+            "            if self._position >= len(self.samples):\n"
+            "                self._position = 0"
+        ),
+        (
+            "            if self._position > len(self.samples):\n"
+            "                self._position = 0"
+        ),
+    ),
+    (
+        "player seek is not clamped",
+        "src/daw/live.py",
+        "self._position = min(max(target, 0), len(self.samples))",
+        "self._position = target",
+    ),
+    (
+        "player moves while paused",
+        "src/daw/live.py",
+        "            if not self._playing:\n                return out",
+        (
+            "            if not self._playing:\n"
+            "                self._position += count\n"
+            "                return out"
+        ),
+    ),
+    # visualizer
+    (
+        "seek bar ignores where you click",
+        "src/daw/visualizer.py",
+        "return min(max((x - left) / width, 0.0), 1.0)",
+        "return min(max((x - left) / width / 2, 0.0), 1.0)",
+    ),
+    (
+        "dragging does not pause",
+        "src/daw/visualizer.py",
+        "                self._resume = player.playing\n                player.pause()",
+        "                self._resume = player.playing",
+    ),
+    (
+        "unmapped key quits",
+        "src/daw/visualizer.py",
+        "        if key in (pygame.K_ESCAPE, pygame.K_q):",
+        "        if key not in (pygame.K_SPACE, pygame.K_r, pygame.K_HOME):",
+    ),
+    (
+        "shift does not take the big step",
+        "src/daw/visualizer.py",
+        "step = BIG_STEP if modifiers & pygame.KMOD_SHIFT else SMALL_STEP",
+        "step = SMALL_STEP",
+    ),
+    (
+        "spectrogram is drawn upside down",
+        "src/daw/visualizer.py",
+        "make_surface(window[:, ::-1, :])",
+        "make_surface(window)",
+    ),
+    (
+        "time format drops the tenths",
+        "src/daw/visualizer.py",
+        'return f"{minutes}:{rest // 10:02d}.{rest % 10}"',
+        'return f"{minutes}:{rest // 10:02d}.0"',
+    ),
 ]
 
 
@@ -406,6 +518,8 @@ FAST_TESTS = {
     "src/daw/filters.py": ["tests/test_filters.py"],
     "src/daw/constants.py": ["tests/test_constants.py"],
     "src/daw/live.py": ["tests/test_live.py"],
+    "src/daw/analysis.py": ["tests/test_analysis.py"],
+    "src/daw/visualizer.py": ["tests/test_visualizer.py"],
 }
 
 DOCS_FRESHNESS_TEST = (

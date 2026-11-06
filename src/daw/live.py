@@ -8,6 +8,7 @@ the sound card asks for a few hundred samples at a time. So the work is split.
   renders any stretch of a note as plain NumPy, in a few microseconds.
 * `Mixer` keeps the notes that are sounding and sums them, one chunk at a time.
 * `Instrument` makes a `NoteSource` for each note of a function `f(note)`.
+* `Player` plays a finished signal, with pause and seek.
 * `RingBuffer` remembers the latest samples so a display can draw them.
 * `LiveOutput` connects a `Mixer` to the speakers.
 """
@@ -15,6 +16,7 @@ the sound card asks for a few hundred samples at a time. So the work is split.
 import threading
 from collections.abc import Callable, Hashable, Iterable
 from types import TracebackType
+from typing import Protocol
 
 import numpy as np
 import numpy.typing as npt
@@ -178,6 +180,92 @@ class Mixer:
         return self.gain * mix
 
 
+class Player:
+    """A finished signal that can be played, paused and sought, a chunk at a time.
+
+    It is what `visualize` plays: `render(count)` hands out the next `count`
+    samples while it is playing (silence when paused) and moves the position
+    on, so the audio callback drives the clock and a display that reads
+    `position` is always in step with what is heard. Playback stops by itself
+    at the end; `play` from the end starts again. Calls may come from
+    different threads, so they are locked."""
+
+    def __init__(self, samples: npt.ArrayLike, sample_rate: int) -> None:
+        data = np.array(samples, dtype=float)
+        if data.ndim != 1 or len(data) == 0:
+            raise ValueError("samples must be a non-empty one-dimensional array")
+        if sample_rate <= 0:
+            raise ValueError("sample rate must be positive")
+        self.samples = data
+        self.sample_rate = sample_rate
+        self._position = 0
+        self._playing = False
+        self._lock = threading.Lock()
+
+    @property
+    def duration(self) -> float:
+        return len(self.samples) / self.sample_rate
+
+    @property
+    def position(self) -> int:
+        """The next sample to be played"""
+        with self._lock:
+            return self._position
+
+    @property
+    def seconds(self) -> float:
+        return self.position / self.sample_rate
+
+    @property
+    def playing(self) -> bool:
+        with self._lock:
+            return self._playing
+
+    @property
+    def finished(self) -> bool:
+        return self.position >= len(self.samples)
+
+    def play(self) -> None:
+        with self._lock:
+            if self._position >= len(self.samples):
+                self._position = 0
+            self._playing = True
+
+    def pause(self) -> None:
+        with self._lock:
+            self._playing = False
+
+    def toggle(self) -> None:
+        if self.playing:
+            self.pause()
+        else:
+            self.play()
+
+    def seek(self, seconds: float) -> None:
+        """Jump to a time, kept between the start and the end"""
+        target = round(seconds * self.sample_rate)
+        with self._lock:
+            self._position = min(max(target, 0), len(self.samples))
+
+    def replay(self) -> None:
+        self.seek(0.0)
+        self.play()
+
+    def render(self, count: int) -> Samples:
+        if count < 0:
+            raise ValueError("count must not be negative")
+        out = np.zeros(count)
+        with self._lock:
+            if not self._playing:
+                return out
+            chunk = self.samples[self._position : self._position + count]
+            out[: len(chunk)] = chunk
+            self._position += len(chunk)
+            if self._position >= len(self.samples):
+                self._playing = False
+        return out
+
+
 class Instrument:
     """A function from a note to its signal, compiled once per note.
 
@@ -248,8 +336,14 @@ class RingBuffer:
         return out
 
 
+class Renderer(Protocol):
+    """Anything that can hand the sound card its next samples: a `Mixer`, a `Player`"""
+
+    def render(self, count: int) -> Samples: ...
+
+
 class LiveOutput:
-    """Plays a `Mixer` through the speakers until stopped.
+    """Plays a `Mixer` (or a `Player`) through the speakers until stopped.
 
     The sound card asks for `block_size` samples at a time; each request is
     answered by `mixer.render`, and copied into `tap` (a `RingBuffer`) when
@@ -258,7 +352,7 @@ class LiveOutput:
 
     def __init__(
         self,
-        mixer: Mixer,
+        mixer: Renderer,
         sample_rate: int = DEFAULT_SAMPLE_RATE,
         block_size: int = 512,
         tap: RingBuffer | None = None,

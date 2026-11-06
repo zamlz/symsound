@@ -27,6 +27,7 @@ from daw.live import (
     LiveOutput,
     Mixer,
     NoteSource,
+    Renderer,
     RingBuffer,
 )
 from daw.waves.basic import sawtooth, sine
@@ -424,8 +425,10 @@ class TestRelease:
         mixer.note_off("a")
         rest = render_in_chunks(mixer, sizes)
         total = held_samples + len(rest)
-        expected = compile(
-            CHORD_TONE.subs(ACTIVE_DURATION, held_samples / RATE), total / RATE, RATE
+        # Evaluated at i / RATE directly: compile's grid can be a sample short
+        expected = evaluate(
+            CHORD_TONE.subs(ACTIVE_DURATION, held_samples / RATE),
+            np.arange(total) / RATE,
         )
         np.testing.assert_allclose(np.concatenate([first, rest]), expected, atol=1e-9)
 
@@ -703,3 +706,161 @@ class TestThreads:
         stop.set()
         thread.join()
         assert not errors
+
+
+class TestPlayer:
+    def player(self, length=1000, rate=RATE):
+        return live.Player(np.arange(length, dtype=float), rate)
+
+    def test_it_starts_paused_at_the_beginning(self):
+        player = self.player()
+        assert not player.playing
+        assert player.position == 0
+        assert player.seconds == 0.0
+        assert not player.finished
+
+    def test_it_knows_its_length(self):
+        assert self.player(4000, 8000).duration == 0.5
+
+    def test_paused_it_plays_silence_and_does_not_move(self):
+        player = self.player()
+        assert (player.render(100) == 0).all()
+        assert player.position == 0
+
+    def test_playing_hands_out_the_samples_in_order(self):
+        player = self.player()
+        player.play()
+        np.testing.assert_array_equal(player.render(3), [0, 1, 2])
+        np.testing.assert_array_equal(player.render(3), [3, 4, 5])
+        assert player.position == 6
+
+    @given(st.lists(st.integers(min_value=0, max_value=400), max_size=8))
+    def test_any_chunking_plays_the_same_signal(self, sizes):
+        player = self.player()
+        player.play()
+        heard = np.concatenate([player.render(size) for size in sizes] or [np.zeros(0)])
+        expected = np.zeros(sum(sizes))
+        expected[: min(len(expected), 1000)] = np.arange(min(len(expected), 1000))
+        np.testing.assert_array_equal(heard, expected)
+
+    def test_it_stops_by_itself_at_the_end_and_pads_with_silence(self):
+        player = self.player(10)
+        player.play()
+        np.testing.assert_array_equal(player.render(14), list(range(10)) + [0] * 4)
+        assert player.finished
+        assert not player.playing
+        assert (player.render(5) == 0).all()
+
+    def test_pause_keeps_the_place_and_play_carries_on(self):
+        player = self.player()
+        player.play()
+        player.render(10)
+        player.pause()
+        player.render(50)
+        assert player.position == 10
+        player.play()
+        assert player.render(1)[0] == 10
+
+    def test_toggle_flips_between_playing_and_paused(self):
+        player = self.player()
+        player.toggle()
+        assert player.playing
+        player.toggle()
+        assert not player.playing
+
+    def test_play_from_the_end_starts_again(self):
+        player = self.player(10)
+        player.play()
+        player.render(10)
+        assert player.finished
+        player.play()
+        assert player.position == 0
+        assert player.render(2).tolist() == [0, 1]
+
+    def test_seek_jumps_to_a_time_in_seconds(self):
+        player = self.player(8000, 8000)
+        player.seek(0.5)
+        assert player.position == 4000
+        assert player.seconds == 0.5
+        player.play()
+        assert player.render(1)[0] == 4000
+
+    def test_seek_is_kept_between_the_ends(self):
+        player = self.player(8000, 8000)
+        player.seek(-3.0)
+        assert player.position == 0
+        player.seek(99.0)
+        assert player.position == 8000
+        assert player.finished
+
+    def test_seeking_keeps_playing_state(self):
+        player = self.player()
+        player.play()
+        player.seek(0.05)
+        assert player.playing
+        player.pause()
+        player.seek(0.01)
+        assert not player.playing
+
+    def test_replay_goes_to_the_start_and_plays(self):
+        player = self.player()
+        player.play()
+        player.render(500)
+        player.replay()
+        assert player.position == 0 and player.playing
+
+    def test_the_signal_is_copied_so_later_changes_do_not_leak_in(self):
+        data = np.ones(10)
+        player = live.Player(data, RATE)
+        data[:] = 5
+        player.play()
+        assert player.render(1)[0] == 1.0
+
+    @pytest.mark.parametrize("samples", [[], [[1.0, 2.0]]])
+    def test_it_needs_a_non_empty_one_dimensional_signal(self, samples):
+        with pytest.raises(ValueError, match="non-empty"):
+            live.Player(samples, RATE)
+
+    def test_a_bad_sample_rate_is_refused(self):
+        with pytest.raises(ValueError, match="sample rate"):
+            live.Player([1.0], 0)
+
+    def test_a_negative_chunk_is_refused(self):
+        with pytest.raises(ValueError, match="negative"):
+            self.player().render(-1)
+
+    def test_a_mixer_and_a_player_both_count_as_renderers(self):
+        # Renderer is the shape LiveOutput accepts: anything with render(count)
+        def render_one(renderer: Renderer):
+            return renderer.render(1)
+
+        assert render_one(Mixer()).shape == (1,)
+        assert render_one(live.Player([1.0, 2.0], RATE)).shape == (1,)
+
+    def test_it_can_drive_the_speakers_like_a_mixer(self, fake_sounddevice):
+        player = live.Player(compile(sine(440), 0.25, RATE), RATE)
+        player.play()
+        LiveOutput(player, sample_rate=RATE)
+        outdata = np.zeros((400, 1), dtype=np.float32)
+        fake_sounddevice.streams[0].callback(outdata, 400, None, None)
+        np.testing.assert_allclose(
+            outdata[:, 0], compile(sine(440), 0.25, RATE)[:400], atol=1e-6
+        )
+        assert player.position == 400
+
+    def test_a_display_thread_can_read_the_position_while_audio_plays(self):
+        player = self.player(200000)
+        player.play()
+        seen = []
+
+        def audio():
+            for _ in range(1000):
+                player.render(100)
+
+        thread = threading.Thread(target=audio)
+        thread.start()
+        while thread.is_alive():
+            seen.append(player.position)
+        thread.join()
+        assert seen == sorted(seen)
+        assert player.position == 100000

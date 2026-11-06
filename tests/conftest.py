@@ -9,6 +9,10 @@ from hypothesis import HealthCheck, settings
 
 matplotlib.use("Agg")
 
+# The visualizer is tested without a screen or a sound card
+os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
+
 # Deterministic and un-deadlined for CI, randomized locally to find new bugs
 settings.register_profile(
     "default",

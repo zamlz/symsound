@@ -20,6 +20,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+gui = [
+  "pygame-ce"
+]
 develop = [
   "ipdb",
   "hypothesis",

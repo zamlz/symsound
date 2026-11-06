@@ -24,6 +24,7 @@
       matplotlib
       mypy
       numpy
+      pygame-ce
       pytest
       pytest-cov
       scipy
