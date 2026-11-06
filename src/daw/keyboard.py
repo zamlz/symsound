@@ -14,7 +14,7 @@ It needs pygame (`pip install 'daw[gui]'`), which the rest of the package does n
 """
 
 import os
-from collections.abc import Callable, Hashable
+from collections.abc import Callable, Hashable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -305,11 +305,23 @@ class _Keyboard:
                 )
 
 
+def _check_envelope(instrument: Instrument, notes: Iterable[Note] = NOTES) -> None:
+    """Refuse a signal that never learns when the key came up"""
+    for note in notes:
+        if not instrument.source(note).has_release:
+            raise ValueError(
+                f"the signal for {note_name(note)} has no envelope: multiply it by "
+                "adsr_envelope(...) so it knows when the key is released, or pass "
+                "require_envelope=False to let it fade out over 10 ms instead"
+            )
+
+
 def keyboard(
     function: Callable[[Note], Expr],
     *,
     octave: int = 4,
     gain: float = 0.25,
+    require_envelope: bool = True,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
     title: str = "daw keyboard",
     silent: bool = False,
@@ -320,11 +332,16 @@ def keyboard(
     The home row plays the white keys and the row above the black keys, `z`
     and `x` move down and up an octave, and the on-screen piano can be clicked.
     Every note is compiled before the window opens, which takes about a second.
-    A filtered signal cannot be played live and raises a `ValueError`.
+    A filtered signal cannot be played live and raises a `ValueError`, and so
+    does one with no envelope, unless `require_envelope` is false (it then
+    fades out over 10 ms when the key is released). The envelope is what
+    `adsr_envelope` puts in the signal: it is how a note learns the key came up.
     `gain` scales the sum of the notes (see `Mixer`). With `silent` no sound is
     made and the picture runs on the clock. Returns when the window is closed."""
     instrument = Instrument(function, sample_rate)
     instrument.precompile(NOTES)
+    if require_envelope:
+        _check_envelope(instrument)
     mixer = Mixer(gain)
     ring = RingBuffer(RING_SAMPLES)
     window = _Keyboard(
@@ -348,15 +365,19 @@ def keyboard_snapshot(
     octave: int = 4,
     seconds: float = 3.0,
     gain: float = 0.25,
+    require_envelope: bool = True,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
     title: str = "daw keyboard",
     size: tuple[int, int] = WINDOW_SIZE,
 ) -> None:
     """Save a picture of the keyboard after `held` notes have been sounding
     for `seconds`. Nothing is opened or played, so it needs no display (the
-    docs use it for their pictures)."""
+    docs use it for their pictures). Like `keyboard` it refuses a signal with
+    no envelope unless `require_envelope` is false."""
     instrument = Instrument(function, sample_rate)
     instrument.precompile(held)
+    if require_envelope:
+        _check_envelope(instrument, held)
     mixer = Mixer(gain)
     ring = RingBuffer(RING_SAMPLES)
     window = _Keyboard(instrument, mixer, ring, octave=octave, title=title)

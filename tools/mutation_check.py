@@ -574,6 +574,18 @@ MUTANTS = [
         "            self.ring.write(self.mixer.render(round(seconds * rate)))",
         "            pass",
     ),
+    (
+        "keyboard accepts a signal with no envelope",
+        "src/daw/keyboard.py",
+        "        if not instrument.source(note).has_release:",
+        "        if False:",
+    ),
+    (
+        "keyboard checks the envelope even when told not to",
+        "src/daw/keyboard.py",
+        "    if require_envelope:\n        _check_envelope(instrument)\n",
+        "    if True:\n        _check_envelope(instrument)\n",
+    ),
     # drawing
     (
         "spectrogram colours reversed",

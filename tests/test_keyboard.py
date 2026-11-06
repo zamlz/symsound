@@ -574,7 +574,7 @@ class TestKeyboardFunction:
             calls.append(note)
             return sine(note)
 
-        keyboard(function, sample_rate=RATE)
+        keyboard(function, sample_rate=RATE, require_envelope=False)
         assert sorted(calls, key=lambda n: n.value) == NOTES
         assert opened["window"].instrument.sample_rate == RATE
 
@@ -632,6 +632,43 @@ class TestKeyboardFunction:
             window.handle(key(code))
         assert np.abs(window.mixer.render(RATE)).max() <= 1.0
 
+    def test_a_signal_with_no_envelope_is_refused_by_default(
+        self, fake_sounddevice, opened
+    ):
+        with pytest.raises(ValueError, match=r"no envelope.*adsr_envelope"):
+            keyboard(lambda note: sine(note), sample_rate=RATE)
+        assert fake_sounddevice.streams == [] and not opened
+
+    def test_the_error_names_the_note_and_says_how_to_opt_out(
+        self, fake_sounddevice, opened
+    ):
+        with pytest.raises(ValueError) as error:
+            keyboard(lambda note: sine(note), sample_rate=RATE)
+        assert "A0" in str(error.value)
+        assert "require_envelope=False" in str(error.value)
+
+    def test_one_note_without_an_envelope_is_enough_to_refuse(
+        self, fake_sounddevice, opened
+    ):
+        def patchy(note):
+            return sine(note) if note is Note.E5 else voice(note)
+
+        with pytest.raises(ValueError, match="E5"):
+            keyboard(patchy, sample_rate=RATE)
+
+    def test_a_signal_with_no_envelope_plays_when_asked(self, fake_sounddevice, opened):
+        keyboard(lambda note: sine(note), sample_rate=RATE, require_envelope=False)
+        window = opened["window"]
+        window.handle(key(pygame.K_a))
+        window.handle(key_up(pygame.K_a))
+        window.mixer.render(RATE // 10)  # the 10 ms fade runs out
+        window.mixer.render(RATE // 10)
+        assert window.mixer.active == 0
+
+    def test_a_signal_with_an_envelope_needs_no_flag(self, fake_sounddevice, opened):
+        keyboard(voice, sample_rate=RATE)
+        assert opened["window"].instrument.sample_rate == RATE
+
     def test_a_filtered_signal_is_refused_before_anything_opens(
         self, fake_sounddevice, opened
     ):
@@ -663,6 +700,36 @@ class TestKeyboardFunction:
 
 
 class TestSnapshot:
+    def test_a_signal_with_no_envelope_is_refused_by_default(self, tmp_path):
+        with pytest.raises(ValueError, match="no envelope"):
+            keyboard_snapshot(
+                lambda note: sine(note),
+                (Note.A4,),
+                tmp_path / "x.png",
+                sample_rate=RATE,
+            )
+        assert not (tmp_path / "x.png").exists()
+
+    def test_it_can_draw_one_anyway_when_asked(self, tmp_path):
+        keyboard_snapshot(
+            lambda note: sine(note),
+            (Note.A4,),
+            tmp_path / "x.png",
+            seconds=0.2,
+            sample_rate=RATE,
+            require_envelope=False,
+        )
+        assert (tmp_path / "x.png").exists()
+
+    def test_only_the_held_notes_are_checked(self, tmp_path):
+        def patchy(note):
+            return voice(note) if note is Note.C4 else sine(note)
+
+        keyboard_snapshot(
+            patchy, (Note.C4,), tmp_path / "x.png", seconds=0.2, sample_rate=RATE
+        )
+        assert (tmp_path / "x.png").exists()
+
     def test_it_draws_the_held_keys_lit(self, tmp_path):
         out = tmp_path / "deep" / "kb.png"
         keyboard_snapshot(

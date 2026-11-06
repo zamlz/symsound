@@ -4,6 +4,7 @@
 - [Playing](#playing)
 - [What you see](#what-you-see)
 - [Options](#options)
+- [Why an envelope is required](#why-an-envelope-is-required)
 - [Which note is which key](#which-note-is-which-key)
 - [The live spectrogram](#the-live-spectrogram)
 <!-- md-toc: end -->
@@ -82,24 +83,48 @@ there is no seek bar: the sound is live.
 
 ## Options
 
-`keyboard(function, *, octave=4, gain=0.25, sample_rate=44100, title, silent, size)`
+`keyboard(function, *, octave=4, gain=0.25, require_envelope=True, sample_rate=44100, title, silent, size)`
 
 - `octave` is the starting octave, from 1 to 7.
 - `gain` scales the sum of the notes, because notes add. The default of 0.25 keeps
   four full-scale notes under 1; ten fingers at once need less.
+- `require_envelope` (on by default) refuses a signal that has no envelope. See
+  below.
 - `silent=True` shows everything but makes no sound.
 - `size=(width, height)` sets the window size.
 
-`keyboard_snapshot(function, held, output_file, *, octave, seconds, gain, sample_rate, title, size)`
+`keyboard_snapshot(function, held, output_file, *, octave, seconds, gain, require_envelope, sample_rate, title, size)`
 saves a picture of the window after the notes in `held` have sounded for `seconds`.
 It opens nothing and makes no sound; it is how the picture above was made.
 
 Every note is compiled before the window opens, which takes about a second, so
 that pressing a key only does a little arithmetic (see [Live playback](live.md)).
-A signal with a `low_pass_filter` in it cannot be played live and raises a
+A signal with a `low_pass_filter` in it cannot be played live and also raises a
 `ValueError` before the window opens, because a filter needs the whole signal from
 the start. A filter that sweeps in time, like the one in `house_with_low_pass.py`,
 works in `visualize` instead.
+
+## Why an envelope is required
+
+A key goes down and, some time later, comes up. A signal only finds out about
+that through `ACTIVE_DURATION`, the symbol inside `adsr_envelope`: the keyboard
+holds it far in the future while the key is down, so the note sustains, and sets
+it to the time you held the key when you let go, so the release plays out. A
+signal with no envelope has nothing to tell, so it would sound until it was cut
+off by a click.
+
+So `keyboard` raises a `ValueError` for such a signal, naming the first note that
+has none and saying what to do, before it opens anything:
+
+```python no-run
+keyboard(lambda note: sine(note))       # ValueError: the signal for A0 has no envelope ...
+```
+
+Multiply by `adsr_envelope(...)` to fix it. If you really want the bare signal, for
+a quick test or a drone, pass `require_envelope=False` and it fades out over 10 ms
+when the key comes up. The check covers every note of the keyboard, so one note
+without an envelope is enough to be refused. `keyboard_snapshot` makes the same
+check for the notes it holds.
 
 ## Which note is which key
 
