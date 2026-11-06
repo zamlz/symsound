@@ -212,6 +212,12 @@ class TestBuildDocsTool:
     def tool(self):
         return load_build_docs()
 
+    def test_a_failure_shows_the_error_not_just_that_there_was_one(self, tool):
+        text = "fine\nTraceback (most recent call last)\n  File x\nValueError: boom\n"
+        shown = tool.excerpt(text, "Traceback (most recent call last)")
+        assert "ValueError: boom" in shown
+        assert "fine" not in shown
+
     def test_finds_every_image_reference_on_a_line(self, tool, tmp_path):
         (tmp_path / "a.md").write_text(
             "![x](img/one.png) text ![y](img/two.png)\n[link](other.md)\n"

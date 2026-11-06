@@ -43,6 +43,12 @@ def run_md(command, text, cwd):
     return result.stdout
 
 
+def excerpt(text, marker, lines=14):
+    """The marker line and what follows it, so a failure explains itself"""
+    after = text[text.index(marker) :].splitlines()[:lines]
+    return "\n    ".join(after)
+
+
 def build(docs):
     """Regenerate every page in `docs`. Returns the problems found."""
     problems = []
@@ -51,7 +57,9 @@ def build(docs):
         built = run_md("toc", run_md("code", text, docs), docs)
         for marker in FAILURE_MARKERS:
             if marker in built:
-                problems.append(f"{page.name}: a code block failed ({marker!r})")
+                problems.append(
+                    f"{page.name}: a code block failed\n    {excerpt(built, marker)}"
+                )
         page.write_text(built)
     return problems
 
