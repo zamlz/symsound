@@ -87,7 +87,7 @@ pip install -e '.[develop]'
 | --- | --- |
 | Run tests | `pytest` (add `-m "not slow"` to skip the examples) |
 | Lint | `ruff check .` |
-| Format | `ruff format` |
+| Format | `ruff format tests` |
 | Type check | `mypy src/daw` |
 
 Tool settings live in `pyproject.toml` (ruff, mypy, pytest).

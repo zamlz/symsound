@@ -371,7 +371,9 @@ nix develop -c python tools/mutation_check.py
   bugbear, pyupgrade and simplify rules. flake8 is not used, ruff covers it.
   `SIM108` and `SIM300` are ignored on purpose: sympy comparisons read better
   as `TIME <= x`.
-- **ruff format** is applied to `tests/`. `src/` has not been reformatted yet.
+- **ruff format** is applied to `tests/`, and the `ruff` check fails if a test
+  file is not formatted. `src/` has not been reformatted yet (the mutants in
+  `tools/mutation_check.py` match its exact text).
   Do not mix a reformat of `src/` into a functional change.
 - **mypy** checks `src/daw`. New code in `src/daw` is typed.
 - Match the surrounding code: naming, comments, and idiom.
@@ -409,7 +411,6 @@ Each of these has a test. When you fix one, flip its test as described in
 
 | Limitation | Where | Test |
 | --- | --- | --- |
-| `compile()` of a constant expression returns a scalar instead of one value per sample, so `play`/`save` of pure silence or DC would fail | `waves/utils.py` | `test_constant_expression_is_broadcast_to_every_sample` (xfail) |
 | A filtered expression can only be evaluated over a uniform sample grid, not at a single time; the filter starts at rest at the first sample | `filters.py` | `TestValidation` |
 | `WHITE_NOISE` is one shared symbol, so every use in an expression sees the same samples | `waves/utils.py` | `test_white_noise_symbol_is_one_shared_signal` |
 | `sawtooth_v2` is scaled by pi/2 and overshoots about 18% (Gibbs), unlike `sawtooth` which is within +/-1 | `waves/basic.py` | `TestSawtoothV2` |

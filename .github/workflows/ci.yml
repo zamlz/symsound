@@ -19,13 +19,15 @@ jobs:
     env:
       HYPOTHESIS_PROFILE: ci
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
       - name: Lint (ruff)
-        run: nix develop -c ruff check --output-format=github .
+        run: |
+          nix develop -c ruff check --output-format=github .
+          nix develop -c ruff format --check tests
       - name: Types (mypy)
         run: nix develop -c mypy src/daw
       - name: Tests and coverage (pytest)

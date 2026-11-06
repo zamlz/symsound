@@ -15,11 +15,8 @@ dependencies = [
   "numpy",
   "scipy",
   "sounddevice",
-  "scipy",
-  "scipy.*",
   "soundfile",
-  "sympy",
-  "sympy.*"
+  "sympy"
 ]
 
 [project.optional-dependencies]

@@ -65,7 +65,7 @@
       mkCheck = mkCheckWith [ ];
     in {
       pytest = mkCheck "pytest" "pytest -q -p no:cacheprovider";
-      ruff = mkCheck "ruff" "ruff check --no-cache .";
+      ruff = mkCheck "ruff" "ruff check --no-cache . && ruff format --check --no-cache tests";
       mypy = mkCheck "mypy" "mypy --cache-dir=/dev/null src/daw";
       # Re-runs every code block in docs/ and fails if the committed output or
       # graphs differ (fix with: python tools/build_docs.py)

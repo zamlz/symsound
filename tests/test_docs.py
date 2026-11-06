@@ -172,9 +172,7 @@ class TestCoverage:
 class TestKickWalkthrough:
     def quoted(self):
         return [
-            code
-            for info, code, fields in python_blocks(WALKTHROUGH)
-            if fields is None
+            code for info, code, fields in python_blocks(WALKTHROUGH) if fields is None
         ]
 
     def test_quotes_the_real_example(self):
@@ -199,9 +197,7 @@ class TestKickWalkthrough:
         # run_path without run_name="__main__" must build the signals only
         assert 'if __name__ == "__main__":' in KICK
         graph_blocks = [
-            code
-            for _, code, fields in python_blocks(WALKTHROUGH)
-            if fields is not None
+            code for _, code, fields in python_blocks(WALKTHROUGH) if fields is not None
         ]
         assert graph_blocks
         assert all("run_path" in code for code in graph_blocks)

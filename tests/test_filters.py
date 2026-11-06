@@ -170,8 +170,9 @@ class TestSineResponse:
         lag = np.arctan(freq / cutoff)
         assert lag == pytest.approx(np.pi / 4)
         reference = np.sin(2 * np.pi * freq * t - lag) / np.sqrt(2)
-        np.testing.assert_allclose(out[int(0.3 * SR) :], reference[int(0.3 * SR) :],
-                                   atol=2e-3)
+        np.testing.assert_allclose(
+            out[int(0.3 * SR) :], reference[int(0.3 * SR) :], atol=2e-3
+        )
 
     def test_lowering_the_cutoff_reduces_the_output(self):
         t = grid(0.6)
@@ -306,9 +307,7 @@ class TestTimeShifting:
         t = grid(0.4)
         note = sine(330) * ENVELOPE
         plain = evaluate(low_pass_filter(note, 200), t)
-        shifted = evaluate(
-            low_pass_filter(note.subs(TIME, TIME - self.START), 200), t
-        )
+        shifted = evaluate(low_pass_filter(note.subs(TIME, TIME - self.START), 200), t)
         n = round(self.START * SR)
         np.testing.assert_allclose(shifted[:n], 0.0, atol=1e-12)
         np.testing.assert_allclose(shifted[n:], plain[:-n], atol=1e-9)
@@ -318,9 +317,7 @@ class TestTimeShifting:
         note = sine(330) * ENVELOPE
         inside = low_pass_filter(note.subs(TIME, TIME - self.START), 200)
         outside = low_pass_filter(note, 200).subs(TIME, TIME - self.START)
-        np.testing.assert_allclose(
-            evaluate(inside, t), evaluate(outside, t), atol=1e-9
-        )
+        np.testing.assert_allclose(evaluate(inside, t), evaluate(outside, t), atol=1e-9)
 
     def test_shifted_note_is_silent_before_it_starts(self):
         t = grid(0.4)
@@ -478,8 +475,9 @@ class TestApplyLowPass:
 
     def test_a_scalar_input_is_broadcast_against_the_cutoff_array(self):
         out = apply_low_pass(np.ones(40), np.full(40, 300.0), SR)
-        np.testing.assert_allclose(out, apply_low_pass(np.ones(40), 300.0, SR),
-                                   atol=1e-12)
+        np.testing.assert_allclose(
+            out, apply_low_pass(np.ones(40), 300.0, SR), atol=1e-12
+        )
 
     def test_a_cutoff_array_of_the_wrong_length_is_rejected(self):
         with pytest.raises(ValueError, match="cutoff"):
