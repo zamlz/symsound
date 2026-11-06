@@ -19,6 +19,7 @@ exits successfully.
 """
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
@@ -29,9 +30,18 @@ ROOT = Path(__file__).resolve().parent.parent
 FAILURE_MARKERS = ("Traceback (most recent call last)", "Error: Code execution")
 
 
+def md_environment():
+    """`md` runs each block with the first `python3` on PATH. On a machine with
+    another Python installed (a CI runner) that is not the one that has the
+    project's dependencies, so put this interpreter's directory first."""
+    here = str(Path(sys.executable).parent)
+    return dict(os.environ, PATH=here + os.pathsep + os.environ.get("PATH", ""))
+
+
 def run_md(command, text, cwd):
     result = subprocess.run(
         ["md", command],
+        env=md_environment(),
         input=text,
         capture_output=True,
         text=True,

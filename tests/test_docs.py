@@ -212,6 +212,14 @@ class TestBuildDocsTool:
     def tool(self):
         return load_build_docs()
 
+    def test_md_runs_blocks_with_this_interpreter_not_the_first_python_on_path(
+        self, tool, monkeypatch
+    ):
+        monkeypatch.setenv("PATH", "/usr/bin:/bin")
+        path = tool.md_environment()["PATH"].split(":")
+        assert path[0] == str(Path(sys.executable).parent)
+        assert path[1:] == ["/usr/bin", "/bin"]
+
     def test_a_failure_shows_the_error_not_just_that_there_was_one(self, tool):
         text = "fine\nTraceback (most recent call last)\n  File x\nValueError: boom\n"
         shown = tool.excerpt(text, "Traceback (most recent call last)")
