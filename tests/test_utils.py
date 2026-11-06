@@ -149,12 +149,42 @@ class TestCompile:
         step = sp.Piecewise((0.0, TIME < 0.5), (1.0, True))
         np.testing.assert_array_equal(compile(step, 1.0, 4), [0.0, 0.0, 1.0, 1.0])
 
-    @pytest.mark.xfail(
-        strict=True,
-        reason="constant expressions compile to a scalar, not one value per sample",
-    )
     def test_constant_expression_is_broadcast_to_every_sample(self):
-        assert compile(sp.Float(0.5), 1.0, 10).shape == (10,)
+        out = compile(sp.Float(0.5), 1.0, 10)
+        assert out.shape == (10,)
+        np.testing.assert_array_equal(out, np.full(10, 0.5))
+
+    @pytest.mark.parametrize(
+        "constant", [0, 1, sp.Integer(0), sp.Rational(1, 2), -0.25]
+    )
+    def test_every_kind_of_constant_gives_float_samples(self, constant):
+        out = compile(sp.sympify(constant), 0.01, 1000)
+        assert out.shape == (10,)
+        assert out.dtype == np.float64
+        np.testing.assert_array_equal(out, np.full(10, float(constant)))
+
+    @given(
+        constant=st.floats(min_value=-2, max_value=2, allow_nan=False),
+        duration=durations,
+        rate=st.integers(min_value=1, max_value=2000),
+    )
+    def test_a_constant_is_one_value_per_sample_for_any_length(
+        self, constant, duration, rate
+    ):
+        out = compile(sp.Float(constant), duration, rate)
+        assert out.shape == (int(rate * duration),)
+        # sympy Floats keep 15 digits, so the value is only that exact
+        np.testing.assert_allclose(out, constant, rtol=0, atol=1e-12)
+
+    def test_the_result_can_be_written_to(self):
+        # Not a read-only broadcast view of a single number
+        out = compile(sp.Float(0.5), 0.01, 1000)
+        out[0] = 0.0
+        assert out[0] == 0.0
+
+    def test_a_constant_plus_noise_still_varies(self):
+        out = compile(0.5 + 0.0 * WHITE_NOISE, 0.01, 1000)
+        assert out.shape == (10,)
 
     def test_matches_manual_lambdify(self):
         expr = square(7) * 0.3 + sine(11)
@@ -217,6 +247,29 @@ class TestPlay:
             env=env,
         )
         assert result.stdout.strip() == "ok"
+
+
+class TestSilenceAndOffsets:
+    def test_saving_silence_writes_a_file_of_zeros(self, tmp_path):
+        out = tmp_path / "silence.wav"
+        save(sp.Integer(0), 0.25, str(out), sample_rate=8000)
+        data, rate = sf.read(out)
+        assert rate == 8000
+        assert data.shape == (2000,)
+        assert (data == 0).all()
+
+    def test_saving_a_dc_offset_keeps_its_level(self, tmp_path):
+        out = tmp_path / "dc.wav"
+        save(sp.Float(0.25), 0.1, str(out), sample_rate=8000)
+        data, _ = sf.read(out)
+        assert data.shape == (800,)
+        np.testing.assert_allclose(data, 0.25, atol=1 / 32768)
+
+    def test_playing_silence_sends_every_sample(self, fake_sounddevice):
+        play(sp.Integer(0), 0.1, sample_rate=1000)
+        data, rate = fake_sounddevice.plays[0]
+        assert data.shape == (100,)
+        assert rate == 1000
 
 
 class TestSave:

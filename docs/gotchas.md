@@ -37,13 +37,6 @@ A filtered signal can be compiled, played, saved or plotted, but not evaluated
 at a single time. The filter always starts at rest at time zero. See
 [Filters](filters.md).
 
-## Constant expressions compile to a single number
-
-`compile(sp.Float(0.5), 1.0)` returns a single value, not 44100 samples, so
-`play` and `save` of a pure constant (silence or a DC offset) do not work. This
-is a known bug. Anything that still depends on `TIME` or `WHITE_NOISE`
-compiles fine.
-
 ## `sawtooth_v2` overshoots
 
 `sawtooth_v2` builds the wave from 200 sine harmonics and overshoots 1 by about

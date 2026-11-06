@@ -17,14 +17,14 @@ from daw.waves.time import BPM, TIME
 WHITE_NOISE = sp.symbols('white_noise', real=True)
 
 
-def linspace(duration: float, sample_rate: int) -> npt.ArrayLike:
+def linspace(duration: float, sample_rate: int) -> npt.NDArray[np.float64]:
     divisions = int(sample_rate * duration)
     return np.linspace(0, duration, divisions, endpoint=False)
 
 
 # FIXME: Is there a better way to create white noise than to just inject
 # it at compilation?
-def white_noise(duration: float, sample_rate: int) -> npt.ArrayLike:
+def white_noise(duration: float, sample_rate: int) -> npt.NDArray[np.float64]:
     num_samples = int(duration * sample_rate)
     return np.random.uniform(-1.0, 1.0, num_samples)
 
@@ -33,12 +33,13 @@ def compile(
         wave_function: Expr,
         duration: float,
         sample_rate: int = DEFAULT_SAMPLE_RATE
-) -> npt.ArrayLike:
+) -> npt.NDArray[np.float64]:
     equation = sp.lambdify((TIME, WHITE_NOISE), wave_function, "numpy")
-    return equation(
-        linspace(duration, sample_rate),
-        white_noise(duration, sample_rate)
-    )
+    times = linspace(duration, sample_rate)
+    samples = equation(times, white_noise(duration, sample_rate))
+    # A constant expression (silence, a DC offset) comes back as one bare
+    # number: repeat it so there is always one value per sample
+    return np.array(np.broadcast_to(np.asarray(samples, dtype=float), times.shape))
 
 
 def play(
@@ -79,11 +80,7 @@ def _window(
     state (like a filter) is where it would really be at `start`."""
     total = start + duration
     times = np.asarray(linspace(total, sample_rate), dtype=float)
-    # compile() returns a bare number for a constant expression
-    samples = np.broadcast_to(
-        np.asarray(compile(wave_function, total, sample_rate), dtype=float),
-        times.shape,
-    )
+    samples = compile(wave_function, total, sample_rate)
     first = int(round(start * sample_rate))
     return times[first:], samples[first:]
 

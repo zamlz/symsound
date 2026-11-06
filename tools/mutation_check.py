@@ -152,6 +152,12 @@ MUTANTS = [
         "sp.lambdify((WHITE_NOISE, TIME)",
     ),
     (
+        "compile does not repeat constants",
+        "src/daw/waves/utils.py",
+        "np.array(np.broadcast_to(np.asarray(samples, dtype=float), times.shape))",
+        "np.asarray(samples, dtype=float)",
+    ),
+    (
         "play never waits",
         "src/daw/waves/utils.py",
         "        sd.wait()\n",
