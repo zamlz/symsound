@@ -45,6 +45,9 @@ keyboard_snapshot(pluck, (Note.C4, Note.E4, Note.G4), "img/keyboard-chord.png",
 
 ![The keyboard with C, E and G held](img/keyboard-chord.png)
 
+`examples/keyboard_synth.py` is a ready-made instrument to try: a glassy FM electric
+piano with a sub, a drive stage and a tremolo, whose comments explain each layer.
+
 ## Playing
 
 The keys follow the shape of a piano. The home row is the white keys and the row
@@ -97,7 +100,8 @@ there is no seek bar: the sound is live.
 saves a picture of the window after the notes in `held` have sounded for `seconds`.
 It opens nothing and makes no sound; it is how the picture above was made.
 
-Every note is compiled before the window opens, which takes about a second, so
+Every note is compiled before the window opens, which takes a second or a few
+depending on how elaborate the signal is, so
 that pressing a key only does a little arithmetic (see [Live playback](live.md)).
 A signal with a `low_pass_filter` in it cannot be played live and also raises a
 `ValueError` before the window opens, because a filter needs the whole signal from

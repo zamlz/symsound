@@ -331,7 +331,7 @@ def keyboard(
 
     The home row plays the white keys and the row above the black keys, `z`
     and `x` move down and up an octave, and the on-screen piano can be clicked.
-    Every note is compiled before the window opens, which takes about a second.
+    Every note is compiled before the window opens, which takes a second or a few.
     A filtered signal cannot be played live and raises a `ValueError`, and so
     does one with no envelope, unless `require_envelope` is false (it then
     fades out over 10 ms when the key is released). The envelope is what

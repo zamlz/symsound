@@ -718,17 +718,23 @@ class TestVisualize:
         visualize(sine(440), sample_rate=RATE)
         assert opened["viewer"].player.duration == pytest.approx(10.0)
 
-    def test_the_whole_thing_runs_in_a_real_pygame_window(self, fake_sounddevice):
-        # No monkeypatching: a window on the dummy driver, closed by a key
-        # pressed from inside the first frame
-        import threading
+    def test_the_whole_thing_runs_in_a_real_pygame_window(
+        self, fake_sounddevice, monkeypatch
+    ):
+        # No fake window loop: a real one on the dummy driver. The "user" presses
+        # q from inside the third frame, so there is no timing to get wrong
+        frames = []
+        original = _Viewer.advance
 
-        timer = threading.Timer(0.3, lambda: pygame.event.post(key(pygame.K_q)))
-        timer.start()
-        try:
-            visualize(sine(440), 1.0, RATE, silent=True, size=(400, 300))
-        finally:
-            timer.cancel()
+        def advance(self, seconds):
+            original(self, seconds)
+            frames.append(seconds)
+            if len(frames) == 3:
+                self.handle(key(pygame.K_q))
+
+        monkeypatch.setattr(_Viewer, "advance", advance)
+        visualize(sine(440), 1.0, RATE, silent=True, size=(400, 300))
+        assert len(frames) == 3
         assert not pygame.get_init()
 
 

@@ -4,8 +4,6 @@ Sound is measured: every key is played and the pitch that comes out is
 compared with the note it should be.
 """
 
-import threading
-
 import numpy as np
 import pygame
 import pytest
@@ -689,13 +687,23 @@ class TestKeyboardFunction:
             keyboard(voice, sample_rate=RATE)
         assert fake_sounddevice.streams[0].events == ["start", "stop", "close"]
 
-    def test_the_whole_thing_runs_in_a_real_pygame_window(self, fake_sounddevice):
-        timer = threading.Timer(0.5, lambda: pygame.event.post(key(pygame.K_q)))
-        timer.start()
-        try:
-            keyboard(voice, sample_rate=RATE, silent=True, size=(500, 400))
-        finally:
-            timer.cancel()
+    def test_the_whole_thing_runs_in_a_real_pygame_window(
+        self, fake_sounddevice, monkeypatch
+    ):
+        # A real window loop on the dummy driver. The "user" presses q from
+        # inside the third frame, so there is no timing to get wrong
+        frames = []
+        original = _Keyboard.advance
+
+        def advance(self, seconds):
+            original(self, seconds)
+            frames.append(seconds)
+            if len(frames) == 3:
+                self.handle(key(pygame.K_q))
+
+        monkeypatch.setattr(_Keyboard, "advance", advance)
+        keyboard(voice, sample_rate=RATE, silent=True, size=(500, 400))
+        assert len(frames) == 3
         assert not pygame.get_init()
 
 
