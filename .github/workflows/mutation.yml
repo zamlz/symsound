@@ -3,8 +3,8 @@ name: mutation
 # Proves the tests catch bugs by breaking the code on purpose (see
 # tools/mutation_check.py). Each mutant runs only its own tests, so the whole
 # set takes minutes, not hours.
-#   nightly      a rotating handful of mutants, and only if the code changed
-#   Sundays      every mutant
+#   nightly      every mutant, but only if the code changed since the last
+#                green run (otherwise that result still stands)
 #   on demand    from the Actions tab, optionally filtered by label
 on:
   schedule:
@@ -27,24 +27,20 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Decide what to run
+      - name: Decide whether anything changed
         id: plan
         run: |
-          args=""
+          # Only scheduled runs count as "last green": an on-demand run may have
+          # been filtered to a few mutants
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            last=$(gh run list --workflow mutation --status success --limit 1 \
+            last=$(gh run list --workflow mutation --event schedule --status success --limit 1 \
               --json headSha --jq '.[0].headSha // ""')
-            if [ "$(date -u +%u)" = "7" ]; then
-              echo "Sunday: every mutant"
-            elif [ -n "$last" ] && git cat-file -e "$last" 2>/dev/null \
+            if [ -n "$last" ] && git cat-file -e "$last" 2>/dev/null \
               && git diff --quiet "$last" HEAD -- src tests tools/mutation_check.py; then
               echo "Nothing changed since the last green run ($last): skipping"
               echo "skip=true" >> "$GITHUB_OUTPUT"
-            else
-              args="--rotate 8"
             fi
           fi
-          echo "args=$args" >> "$GITHUB_OUTPUT"
       - uses: cachix/install-nix-action@v31
         if: steps.plan.outputs.skip != 'true'
         with:
@@ -53,9 +49,8 @@ jobs:
       - name: Mutation check
         if: steps.plan.outputs.skip != 'true'
         env:
-          ARGS: ${{ steps.plan.outputs.args }}
           FILTERS: ${{ inputs.filters }}
         run: |
           # shellcheck disable=SC2086
-          # (the arguments are separate words on purpose)
-          nix develop -c python tools/mutation_check.py $ARGS $FILTERS
+          # (the filters are separate words on purpose)
+          nix develop -c python tools/mutation_check.py $FILTERS

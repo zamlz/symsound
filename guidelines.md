@@ -358,10 +358,11 @@ nix develop -c python tools/mutation_check.py
   (seconds each), and the whole suite only when those miss it, so all fifty
   take about three minutes. A mutant in a new source file needs an entry in
   `FAST_TESTS` (`tests/test_mutation_tool.py` checks).
-- `--rotate N` runs a different N mutants each day. GitHub runs it from
-  `.github/workflows/mutation.yml`: nightly, a rotating 8, and only when
-  `src/` or `tests/` changed since the last green run; every Sunday, all of
-  them; or on demand from the Actions tab.
+- GitHub runs every mutant nightly from `.github/workflows/mutation.yml`, but
+  skips the night when `src/`, `tests/` and the tool are unchanged since the
+  last green run. It can also be run on demand from the Actions tab, with a
+  label filter. `--rotate N` (a different N mutants each day) is there for
+  when the set outgrows the time budget.
 - It is not part of `nix flake check`.
 
 ## 11. Code style and dependencies
