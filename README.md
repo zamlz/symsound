@@ -59,6 +59,7 @@ nix develop -c python tools/build_docs.py --check  # fail if they are stale
 | `src/daw/waves/utils.py` | `compile`, `play`, `save`, `plot`, `WHITE_NOISE` |
 | `src/daw/envelope.py` | `adsr_envelope` and the `ACTIVE_DURATION` symbol |
 | `src/daw/filters.py` | First-order low-pass filter, applied on the sample grid |
+| `src/daw/live.py` | Real-time engine: notes rendered in pieces, mixed and sent to the speakers |
 | `docs/` | How to use the library, with graphs; the code blocks are executed |
 | `examples/` | Example scripts (`house.py`, `house_with_low_pass.py`, ...) |
 | `tests/` | Pytest suite, golden files and guard tests |

@@ -12,6 +12,7 @@ implemented. Read them in order the first time, then use them as reference.
 | [Filters](filters.md) | `low_pass_filter`, including sweeping the cutoff |
 | [Combining signals](combining.md) | Mixing, gating, fading, crossfading, the building blocks of `house_with_low_pass.py` |
 | [Playing, saving and plotting](output.md) | `compile`, `play`, `save`, `plot` |
+| [Live playback](live.md) | `NoteSource`, `Mixer`, `Instrument`, `RingBuffer`, `LiveOutput`: notes rendered in real time |
 | [`house_with_low_pass.py` walkthrough](house-with-low-pass-walkthrough.md) | The whole example explained line by line |
 | [Gotchas](gotchas.md) | Limits and surprises worth knowing before they bite |
 

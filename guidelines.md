@@ -92,6 +92,7 @@ src/daw/               the library
   constants.py         Note table, DEFAULT_SAMPLE_RATE
   envelope.py          adsr_envelope, ACTIVE_DURATION
   filters.py           low_pass_filter (first-order IIR on the sample grid)
+  live.py              real-time engine: NoteSource, Mixer, Instrument, RingBuffer, LiveOutput
   waves/basic.py       sine, square, triangle, sawtooth, sawtooth_v2, trigger
   waves/time.py        TIME symbol, BPM
   waves/utils.py       linspace, white_noise, compile, play, save, plot
@@ -340,7 +341,7 @@ assertions against [section 4](#4-how-we-test) is still your job.
 ## 10. Mutation check
 
 100% coverage proves code ran, not that tests would notice it being wrong.
-`tools/mutation_check.py` injects about fifty deliberate bugs (an inverted
+`tools/mutation_check.py` injects about sixty deliberate bugs (an inverted
 slope, a wrong sample rate, a dropped guard, a typo in the note table) one at
 a time and confirms the suite fails for each.
 

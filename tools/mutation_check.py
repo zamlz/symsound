@@ -339,6 +339,61 @@ MUTANTS = [
         "DEFAULT_SAMPLE_RATE = 44100",
         "DEFAULT_SAMPLE_RATE = 48000",
     ),
+    # live
+    (
+        "live note time does not start at zero",
+        "src/daw/live.py",
+        "times = (first + np.arange(count)) / self.sample_rate",
+        "times = np.arange(count) / self.sample_rate",
+    ),
+    (
+        "live release measured in samples, not seconds",
+        "src/daw/live.py",
+        "self.position, count, self.released_at / rate",
+        "self.position, count, self.released_at",
+    ),
+    (
+        "live empty chunk ends a release",
+        "src/daw/live.py",
+        "silent = count > 0 and not samples.any()",
+        "silent = not samples.any()",
+    ),
+    (
+        "live fade does not fall",
+        "src/daw/live.py",
+        "np.clip(1 - gone / fade, 0.0, 1.0)",
+        "np.clip(1 + gone / fade, 0.0, 1.0)",
+    ),
+    (
+        "live key auto-repeat restarts the note",
+        "src/daw/live.py",
+        "if any(v.key == key and v.released_at is None for v in self._voices):\n                return",
+        "if False:\n                return",
+    ),
+    (
+        "live mixer ignores gain",
+        "src/daw/live.py",
+        "return self.gain * mix",
+        "return mix",
+    ),
+    (
+        "live finished notes are kept",
+        "src/daw/live.py",
+        "self._voices = [v for v in self._voices if not v.finished]",
+        "self._voices = list(self._voices)",
+    ),
+    (
+        "live ring buffer forgets the order",
+        "src/daw/live.py",
+        "indexes = np.arange(end - count, end) % self.capacity",
+        "indexes = np.arange(count) % self.capacity",
+    ),
+    (
+        "live output does not feed the tap",
+        "src/daw/live.py",
+        "        if self.tap is not None:\n            self.tap.write(samples)",
+        "        if self.tap is None:\n            self.tap = None",
+    ),
 ]
 
 
@@ -350,6 +405,7 @@ FAST_TESTS = {
     "src/daw/waves/utils.py": ["tests/test_utils.py", "tests/test_plotting.py"],
     "src/daw/filters.py": ["tests/test_filters.py"],
     "src/daw/constants.py": ["tests/test_constants.py"],
+    "src/daw/live.py": ["tests/test_live.py"],
 }
 
 DOCS_FRESHNESS_TEST = (

@@ -20,6 +20,24 @@ settings.register_profile("ci", settings.get_profile("default"), derandomize=Tru
 settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "default"))
 
 
+class FakeOutputStream:
+    """Stands in for sounddevice.OutputStream: tests call the callback by hand"""
+
+    def __init__(self, **options):
+        self.options = options
+        self.callback = options["callback"]
+        self.events: list[str] = []
+
+    def start(self):
+        self.events.append("start")
+
+    def stop(self):
+        self.events.append("stop")
+
+    def close(self):
+        self.events.append("close")
+
+
 class FakeSoundDevice(types.ModuleType):
     """Stands in for sounddevice so playback can be asserted without audio"""
 
@@ -28,6 +46,13 @@ class FakeSoundDevice(types.ModuleType):
         self.plays: list[tuple[np.ndarray, int | None]] = []
         self.waits = 0
         self.interrupt = False
+        self.streams: list[FakeOutputStream] = []
+        self.OutputStream = self._make_stream
+
+    def _make_stream(self, **options):
+        stream = FakeOutputStream(**options)
+        self.streams.append(stream)
+        return stream
 
     def play(self, data, samplerate=None):
         if self.interrupt:
