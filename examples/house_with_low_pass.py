@@ -34,7 +34,11 @@ stutter = square(stutter_lfo) + 1.0
 
 saw = 0.1 * (saw_beat**saw_decay) * sawtooth(1000) * stutter
 
-dry = kick + hat + saw
+# The plain sum of the parts peaks at about 1.19 and would clip: scale the
+# mix by 0.8 so the peak stays just under 1
+master_gain = 0.8
+
+dry = master_gain * (kick + hat + saw)
 
 # The low-pass sweep lives in the middle third only. `sweep` rises smoothly
 # from 0 to 1 and back to 0 across it, and is 0 everywhere else. The cutoff

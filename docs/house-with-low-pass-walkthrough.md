@@ -207,11 +207,14 @@ outline, which peaks at the middle of the bar (beat 2). The last is the result:
 the buzz, gated, inside that outline.
 
 ```python
-dry = kick + hat + saw
+master_gain = 0.8
+
+dry = master_gain * (kick + hat + saw)
 ```
 
 `dry` is the whole beat with no effects: the three drums added together
-("dry" is the audio term for unprocessed).
+("dry" is the audio term for unprocessed). Added up they would peak at about
+1.19 and clip, so the sum is scaled by 0.8 to keep the peak just under 1.
 
 All three together, in one bar:
 
@@ -228,7 +231,7 @@ plot(
     [ns["kick"], ns["hat"], ns["saw"], ns["dry"]],
     duration=4,
     bpm=ns["bpm"],
-    labels=["kick", "hat", "saw", "dry = kick + hat + saw"],
+    labels=["kick", "hat", "saw", "dry = 0.8 (kick + hat + saw)"],
     stacked=True,
     output_file="img/house-dry.png",
 )

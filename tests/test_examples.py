@@ -46,6 +46,16 @@ def test_example_runs_without_error(name, fake_sounddevice, tmp_path, monkeypatc
     run_example(name, fake_sounddevice, tmp_path, monkeypatch)
 
 
+@pytest.mark.parametrize("name", ["house", "house_with_low_pass"])
+def test_house_does_not_clip(name, fake_sounddevice, tmp_path, monkeypatch):
+    run_example(name, fake_sounddevice, tmp_path, monkeypatch)
+    for data, _ in fake_sounddevice.plays:
+        # Samples beyond 1 are clipped on playback and in the WAV file
+        assert np.abs(data).max() <= 1.0
+        # ...and the 0.8 gain should not have turned it down needlessly
+        assert np.abs(data).max() > 0.9
+
+
 @pytest.mark.parametrize("name", [n for n in SCRIPTS if n != "classic_synths"])
 def test_example_plays_finite_audible_audio(
     name, fake_sounddevice, tmp_path, monkeypatch

@@ -414,7 +414,6 @@ Each of these has a test. When you fix one, flip its test as described in
 | A filtered expression can only be evaluated over a uniform sample grid, not at a single time; the filter starts at rest at the first sample | `filters.py` | `TestValidation` |
 | `WHITE_NOISE` is one shared symbol, so every use in an expression sees the same samples | `waves/utils.py` | `test_white_noise_symbol_is_one_shared_signal` |
 | `sawtooth_v2` is scaled by pi/2 and overshoots about 18% (Gibbs), unlike `sawtooth` which is within +/-1 | `waves/basic.py` | `TestSawtoothV2` |
-| `examples/house.py` and `house_with_low_pass.py` peak at about 1.19, so it clips on playback and in saved files | `examples/house.py` | golden file (`test_example_sound_has_not_changed`) |
 | `adsr_envelope` uses one global `ACTIVE_DURATION` symbol, so each note needs its own `subs` | `envelope.py` | `TestReleaseFromAnyStage` |
 | Phase integration is symbolic (`sp.integrate`), so frequency expressions SymPy cannot integrate fail, and large ones are slow | `waves/basic.py` | `test_frequency_modulation_integrates_the_frequency` |
 | `adsr_envelope` raises a bare `Exception` for negative parameters | `envelope.py` | `TestValidation` |

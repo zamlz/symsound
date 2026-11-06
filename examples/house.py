@@ -31,7 +31,11 @@ stutter = square(stutter_lfo) + 1.0
 
 saw = 0.1 * (saw_beat**saw_decay) * sawtooth(1000) * stutter
 
-w = kick + hat + saw
+# Each part is at most 1, so the plain sum clips (it peaks at about 1.19).
+# Scaling the mix by 0.8 keeps the peak just under 1.
+master_gain = 0.8
+
+w = master_gain * (kick + hat + saw)
 
 # Only play when run as a script, so importing this file is silent
 if __name__ == "__main__":

@@ -6,7 +6,8 @@ afternoon.
 ## Clipping
 
 Signals above 1 or below -1 are clipped when played or saved. Mixed signals add
-up: scale the mix. `examples/house.py` and `examples/house_with_low_pass.py` peak at about 1.19 and clip a little.
+up: scale the mix. The house examples sum three parts that would peak at about
+1.19, so they scale the mix by 0.8 to stay just under 1.
 
 ## Time shifting a plain oscillator does not silence the start
 
