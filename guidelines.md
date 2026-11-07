@@ -1,6 +1,6 @@
 # Guidelines
 
-How we build and test `daw`. Everything here is a working agreement: follow it
+How we design, build and test `daw`. Everything here is a working agreement: follow it
 for every change, human or AI. The goal is simple: **a change that alters the
 sound, the API or the numbers must fail a test, and a change that does not must
 leave every test green.** We never want to find out by ear that something
@@ -22,6 +22,7 @@ Contents
 12. [Commits](#12-commits)
 13. [Known limitations register](#13-known-limitations-register)
 14. [Writing the docs](#14-writing-the-docs)
+15. [Design principles](#15-design-principles)
 
 ---
 
@@ -222,6 +223,22 @@ tests). Put them in the matching `tests/test_*.py` file.
 - [ ] Time shifting (inside and outside the filter) and sample-rate
       independence; error shrinks at the expected order when the rate doubles.
 - [ ] Invalid input (negative cutoff, a single time, an uneven grid) raises.
+
+### A time effect (`effects.py`)
+
+- [ ] Built as an expression of `TIME` out of `delay`, not as a function on
+      samples (see section 15). The echo and reverb are docs recipes, not API.
+- [ ] Known values, and an independent reference that evaluates the source at
+      the earlier time (`t - seconds`), on the grid `compile` really uses.
+- [ ] Silent before the sound arrives, including for signals that have values
+      at negative time; delaying a delay adds the delays; zero is the identity.
+- [ ] Inside a filter: compare with the filter of the delayed input, and pin
+      the documented start-up difference exactly.
+- [ ] Recipes copied from the docs are tested as written, and what they claim
+      about the sound (spacing, level of each repeat, how the tail falls) is
+      measured on the compiled audio.
+- [ ] Limits (shared noise, rounding NaN after a shift) are written down in
+      the docs and, where they are bugs, strict xfails.
 
 ### A utility (`waves/utils.py`) or anything that touches files, audio or plots
 
@@ -476,3 +493,41 @@ Rules, all enforced by `tests/test_docs.py` or the `docs` flake check:
   as a failure.
 - After changing the library, regenerate the docs and look at the diff of the
   images (open the PNGs): a graph that changed is a sound that changed.
+
+## 15. Design principles
+
+What the library is for, and the choices that follow from it. Check a change
+against these before writing it.
+
+- **The goal is whole songs as expressions.** A song is one SymPy expression of
+  `TIME`, built from oscillators, envelopes, filters and effects, and compiled
+  to samples once, at the very end. Everything else serves that.
+- **Symbolic first.** Implement a feature as an expression whenever it can be.
+  Reach for a numeric implementation only when the computation is literally
+  impossible symbolically or blows up beyond proportion. The one numeric part
+  today is the stateful low-pass filter, a `LowPass` placeholder node that
+  `compile` solves on the sample grid (see `docs/filters.md`). Do not copy that
+  pattern for a feature that can be written as an expression.
+- **Speed is not the main concern.** If a full song takes ten minutes to
+  compile, so be it. Do not trade a clearer, more symbolic design for compile
+  time. Still, state the cost in the docs (for example, each delayed copy
+  re-evaluates the whole signal).
+- **Prefer building blocks over finished effects.** `delay` is the one
+  primitive; an echo and a reverb are short recipes on top of it in
+  `docs/effects.md`, tested as written, so the user can change them freely. A
+  new effect starts as a recipe on existing blocks, and becomes API only when
+  the recipe cannot be written that way.
+- **Live tools are for debugging the sound.** `Mixer`, `keyboard` and
+  `visualize` exist to listen to and look at a signal while working. They are
+  not the core, and no effort goes into rendering stateful filters in real time
+  chunks.
+- **A signal is a plain expression of `TIME`.** Results of functions compose
+  with `+`, `*`, `.subs` and each other. Free symbols are `TIME` (and
+  `WHITE_NOISE` for noise); parameters are numbers in the expression, not
+  hidden state.
+- **Say what does not work.** A known limit is documented where users will look
+  (`docs/gotchas.md`, the relevant page) and pinned by a strict xfail or an
+  exact test (section 7), never left for someone to find by ear.
+- **Examples are tested like the library.** Each audible example has a golden
+  file, a reference check, and measurements of its sound; one that asks the user
+  something takes its input through `input()` so the tests can answer for it.

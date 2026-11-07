@@ -68,7 +68,7 @@ nix develop -c python tools/build_docs.py --check  # fail if they are stale
 | `examples/` | Example scripts (`house.py`, `house_with_low_pass.py`, ...) |
 | `tests/` | Pytest suite, golden files and guard tests |
 | `tools/` | `mutation_check.py` (proves the tests catch bugs), `build_docs.py` (runs the docs) |
-| `guidelines.md` | How we test, lint and commit. Read before contributing |
+| `guidelines.md` | How we design, test, lint and commit, and the principles behind the library. Read before contributing |
 
 ## Development
 
