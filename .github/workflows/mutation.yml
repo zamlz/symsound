@@ -16,6 +16,12 @@ on:
         required: false
         default: ""
 
+# The "did anything change" step lists earlier runs with `gh run list`, which
+# the default token is refused without actions: read (HTTP 403)
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   mutation:
     # Scheduled runs only happen on the default branch
