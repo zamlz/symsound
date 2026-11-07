@@ -27,6 +27,61 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # (label, file, text to replace, replacement). Replacements apply once.
 MUTANTS = [
+    # effects
+    (
+        "delay is not silenced before it arrives",
+        "src/daw/effects.py",
+        "return sp.Piecewise((_shift(signal, amount), TIME >= amount), (0, True))",
+        "return _shift(signal, amount)",
+    ),
+    (
+        "delay arrives at the wrong end of the mask",
+        "src/daw/effects.py",
+        "(_shift(signal, amount), TIME >= amount)",
+        "(_shift(signal, amount), TIME > amount)",
+    ),
+    (
+        "delay shifts the wrong way",
+        "src/daw/effects.py",
+        "return expression.subs(TIME, TIME - seconds)",
+        "return expression.subs(TIME, TIME + seconds)",
+    ),
+    (
+        "delay lets a filter start before its sound",
+        "src/daw/effects.py",
+        "started * _shift(signal, seconds)",
+        "_shift(signal, seconds)",
+    ),
+    (
+        "delay leaves a sweeping cutoff unshifted",
+        "src/daw/effects.py",
+        "_shift(cutoff, seconds), TIME",
+        "cutoff, TIME",
+    ),
+    (
+        "delay only shifts the top level of a filtered mix",
+        "src/daw/effects.py",
+        "return expression.func(*[_shift(arg, seconds) for arg in expression.args])",
+        "return expression.subs(TIME, TIME - seconds)",
+    ),
+    (
+        "delay accepts a negative amount",
+        "src/daw/effects.py",
+        "if amount.is_negative:",
+        "if amount.is_negative is None:",
+    ),
+    (
+        "delay accepts an imaginary amount",
+        "src/daw/effects.py",
+        "if not amount.is_number or not amount.is_real:",
+        "if not amount.is_number:",
+    ),
+    (
+        "delay of nothing is no longer the signal itself",
+        "src/daw/effects.py",
+        "if amount.is_zero:",
+        "if amount.is_zero and False:",
+    ),
     # envelope
     (
         "envelope attack slope",
@@ -609,6 +664,7 @@ FAST_TESTS = {
     "src/daw/waves/basic.py": ["tests/test_basic_waves.py"],
     "src/daw/waves/utils.py": ["tests/test_utils.py", "tests/test_plotting.py"],
     "src/daw/filters.py": ["tests/test_filters.py"],
+    "src/daw/effects.py": ["tests/test_effects.py"],
     "src/daw/constants.py": ["tests/test_constants.py"],
     "src/daw/live.py": ["tests/test_live.py"],
     "src/daw/analysis.py": ["tests/test_analysis.py"],

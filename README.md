@@ -59,6 +59,7 @@ nix develop -c python tools/build_docs.py --check  # fail if they are stale
 | `src/daw/waves/utils.py` | `compile`, `play`, `save`, `plot`, `WHITE_NOISE` |
 | `src/daw/envelope.py` | `adsr_envelope` and the `ACTIVE_DURATION` symbol |
 | `src/daw/filters.py` | First-order low-pass filter, applied on the sample grid |
+| `src/daw/effects.py` | `delay`: a signal, later (echo and reverb are sums of delays) |
 | `src/daw/keyboard.py` | `keyboard`: play a signal with your computer's keys, with a scope and a spectrogram |
 | `src/daw/visualizer.py` | `visualize`: a window that plays a signal and shows it (needs `pip install 'daw[gui]'`) |
 | `src/daw/analysis.py` | The numbers behind the spectrogram and the overview, with no GUI |
