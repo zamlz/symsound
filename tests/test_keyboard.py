@@ -672,8 +672,19 @@ class TestKeyboardFunction:
     ):
         from daw.filters import low_pass_filter
 
-        with pytest.raises(ValueError, match="filtered"):
+        with pytest.raises(ValueError, match="filter or an effect"):
             keyboard(lambda note: low_pass_filter(sine(note), 500), sample_rate=RATE)
+        assert fake_sounddevice.streams == [] and not opened
+
+    @pytest.mark.parametrize("effect", ["echo", "reverb"])
+    def test_an_effect_is_refused_before_anything_opens(
+        self, fake_sounddevice, opened, effect
+    ):
+        import daw.effects
+
+        add = getattr(daw.effects, effect)
+        with pytest.raises(ValueError, match="filter or an effect"):
+            keyboard(lambda note: add(sine(note)), sample_rate=RATE)
         assert fake_sounddevice.streams == [] and not opened
 
     def test_the_stream_is_stopped_even_if_the_window_fails(

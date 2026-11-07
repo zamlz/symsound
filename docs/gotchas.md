@@ -36,7 +36,8 @@ call, though, draws new noise, so two compiles of a noisy signal differ.
 
 A filtered signal can be compiled, played, saved or plotted, but not evaluated
 at a single time. The filter always starts at rest at time zero. See
-[Filters](filters.md).
+[Filters](filters.md). The same goes for [echo and reverb](effects.md), and an
+effect's output is only as long as its input, so compile long enough for the tail.
 
 ## `sawtooth_v2` overshoots
 

@@ -59,6 +59,7 @@ nix develop -c python tools/build_docs.py --check  # fail if they are stale
 | `src/daw/waves/utils.py` | `compile`, `play`, `save`, `plot`, `WHITE_NOISE` |
 | `src/daw/envelope.py` | `adsr_envelope` and the `ACTIVE_DURATION` symbol |
 | `src/daw/filters.py` | First-order low-pass filter, applied on the sample grid |
+| `src/daw/effects.py` | `echo` and `reverb`, applied on the sample grid |
 | `src/daw/keyboard.py` | `keyboard`: play a signal with your computer's keys, with a scope and a spectrogram |
 | `src/daw/visualizer.py` | `visualize`: a window that plays a signal and shows it (needs `pip install 'daw[gui]'`) |
 | `src/daw/analysis.py` | The numbers behind the spectrogram and the overview, with no GUI |
@@ -122,8 +123,9 @@ the test suite work on machines without an audio backend.
 
 ## Known limitations
 
-- A filtered signal can only be evaluated over a uniform grid of sample
-  times (which is what `compile`, `play` and `save` use), not at a single
-  time, and the filter starts at rest at the first sample.
+- A filtered signal (and one with an echo or a reverb) can only be evaluated
+  over a uniform grid of sample times (which is what `compile`, `play` and
+  `save` use), not at a single time, and the filter starts at rest at the
+  first sample.
 - White noise is a single shared symbol, so every use of `WHITE_NOISE` in one
   expression sees the same samples.

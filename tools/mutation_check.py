@@ -27,6 +27,79 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # (label, file, text to replace, replacement). Replacements apply once.
 MUTANTS = [
+    # effects
+    (
+        "echo repeats add instead of subtract the feedback",
+        "src/daw/effects.py",
+        "numerator[shift] = level - feedback",
+        "numerator[shift] = level + feedback",
+    ),
+    (
+        "echo feedback goes the wrong way",
+        "src/daw/effects.py",
+        "denominator[shift] = -feedback",
+        "denominator[shift] = feedback",
+    ),
+    (
+        "echo delay is cut instead of rounded",
+        "src/daw/effects.py",
+        "shift = round(delay * sample_rate)",
+        "shift = int(delay * sample_rate)",
+    ),
+    (
+        "echo allows a feedback that never dies away",
+        "src/daw/effects.py",
+        "if not 0 <= feedback < 1:",
+        "if not 0 <= feedback <= 1:",
+    ),
+    (
+        "reverb decay is 40 dB not 60",
+        "src/daw/effects.py",
+        "gain = 10 ** (-3 * shift / (decay * sample_rate))",
+        "gain = 10 ** (-2 * shift / (decay * sample_rate))",
+    ),
+    (
+        "reverb response is not scaled to unit energy",
+        "src/daw/effects.py",
+        "return np.asarray(response / np.sqrt(np.sum(response**2)))",
+        "return np.asarray(response)",
+    ),
+    (
+        "reverb damping ignored in the comb loop",
+        "src/daw/effects.py",
+        "denominator[shift] -= gain * (1 - damping)",
+        "denominator[shift] -= gain",
+    ),
+    (
+        "reverb all-pass gain changed",
+        "src/daw/effects.py",
+        "ALLPASS_GAIN = 0.5",
+        "ALLPASS_GAIN = 0.7",
+    ),
+    (
+        "reverb tail is cut too early",
+        "src/daw/effects.py",
+        "TAIL_LENGTH = 1.5",
+        "TAIL_LENGTH = 0.5",
+    ),
+    (
+        "reverb drops the dry sound",
+        "src/daw/effects.py",
+        "return np.asarray(x + level * wet)",
+        "return np.asarray(level * wet)",
+    ),
+    (
+        "reverb comb delays are not scaled to the sample rate",
+        "src/daw/effects.py",
+        "return max(round(tuned * sample_rate / TUNING_RATE), 1)",
+        "return tuned",
+    ),
+    (
+        "live engine lets a reverb through",
+        "src/daw/live.py",
+        "expression.has(LowPass, Echo, Reverb)",
+        "expression.has(LowPass, Echo)",
+    ),
     # envelope
     (
         "envelope attack slope",
@@ -609,6 +682,7 @@ FAST_TESTS = {
     "src/daw/waves/basic.py": ["tests/test_basic_waves.py"],
     "src/daw/waves/utils.py": ["tests/test_utils.py", "tests/test_plotting.py"],
     "src/daw/filters.py": ["tests/test_filters.py"],
+    "src/daw/effects.py": ["tests/test_effects.py"],
     "src/daw/constants.py": ["tests/test_constants.py"],
     "src/daw/live.py": ["tests/test_live.py"],
     "src/daw/analysis.py": ["tests/test_analysis.py"],

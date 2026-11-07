@@ -10,6 +10,7 @@ implemented. Read them in order the first time, then use them as reference.
 | [Time and rhythm](time-and-rhythm.md) | `BPM`, shifting a signal in time, placing notes in a song |
 | [Envelopes](envelopes.md) | `adsr_envelope` and shaping a sound's loudness over time |
 | [Filters](filters.md) | `low_pass_filter`, including sweeping the cutoff |
+| [Echo and reverb](effects.md) | `echo` and `reverb`: repeats and the sound of a room |
 | [Combining signals](combining.md) | Mixing, gating, fading, crossfading, the building blocks of `house_with_low_pass.py` |
 | [Playing, saving and plotting](output.md) | `compile`, `play`, `save`, `plot` |
 | [Visualizing a signal](visualizing.md) | `visualize`, `snapshot`: a window with a scope, a spectrogram and a seek bar; `Player` |

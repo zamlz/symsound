@@ -103,9 +103,9 @@ It opens nothing and makes no sound; it is how the picture above was made.
 Every note is compiled before the window opens, which takes a second or a few
 depending on how elaborate the signal is, so
 that pressing a key only does a little arithmetic (see [Live playback](live.md)).
-A signal with a `low_pass_filter` in it cannot be played live and also raises a
-`ValueError` before the window opens, because a filter needs the whole signal from
-the start. A filter that sweeps in time, like the one in `house_with_low_pass.py`,
+A signal with a `low_pass_filter`, an `echo` or a `reverb` in it cannot be played
+live and also raises a `ValueError` before the window opens, because they need the
+whole signal from the start. A filter that sweeps in time, like the one in `house_with_low_pass.py`,
 works in `visualize` instead.
 
 ## Why an envelope is required

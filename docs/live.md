@@ -124,8 +124,9 @@ Things worth knowing:
   chunk, so with 512-sample chunks at 44.1 kHz it is up to about 12 ms late.
 - **`gain` matters.** Notes add. The default of 0.5 keeps two full-scale notes under
   1; use `1 / n` for `n` notes (above, three notes at a gain of 0.4 peak at 0.71).
-- **No filters.** A `low_pass_filter` needs the whole signal from the start, so
-  `NoteSource` raises a `ValueError` for a filtered expression.
+- **No filters or effects.** A `low_pass_filter`, `echo` or `reverb` needs the
+  whole signal from the start, so `NoteSource` raises a `ValueError` for an
+  expression that has one.
 
 ## One signal per note
 

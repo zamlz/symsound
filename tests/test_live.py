@@ -20,6 +20,7 @@ from hypothesis import strategies as st
 import daw
 from daw import live
 from daw.constants import DEFAULT_SAMPLE_RATE, Note
+from daw.effects import echo, reverb
 from daw.envelope import ACTIVE_DURATION, adsr_envelope
 from daw.filters import low_pass_filter
 from daw.live import (
@@ -124,13 +125,21 @@ class TestNoteSource:
 
     def test_a_filtered_signal_is_refused_with_a_reason(self):
         filtered = low_pass_filter(sine(440), 1000)
-        with pytest.raises(ValueError, match="filtered signal cannot be rendered"):
+        with pytest.raises(ValueError, match="cannot be rendered live"):
             NoteSource(filtered, RATE)
 
     def test_a_filter_hidden_inside_a_larger_expression_is_refused(self):
         filtered = 0.5 * sine(110) + 0.5 * low_pass_filter(sine(440), 1000)
-        with pytest.raises(ValueError, match="filtered"):
+        with pytest.raises(ValueError, match="filter or an effect"):
             NoteSource(filtered, RATE)
+
+    @pytest.mark.parametrize("effect", [echo, reverb])
+    def test_an_effect_is_refused_like_a_filter(self, effect):
+        # An echo or a reverb needs the signal from the start, too
+        with pytest.raises(ValueError, match="filter or an effect"):
+            NoteSource(effect(sine(440)), RATE)
+        with pytest.raises(ValueError, match="filter or an effect"):
+            NoteSource(0.5 * sine(110) + 0.5 * effect(sine(440)), RATE)
 
     @pytest.mark.parametrize("rate", [0, -44100])
     def test_a_bad_sample_rate_is_refused(self, rate):
@@ -468,7 +477,7 @@ class TestInstrument:
 
     def test_a_filtered_instrument_fails_when_the_note_is_asked_for(self):
         instrument = Instrument(lambda note: low_pass_filter(sine(note), 800), RATE)
-        with pytest.raises(ValueError, match="filtered"):
+        with pytest.raises(ValueError, match="filter or an effect"):
             instrument.source(Note.A4)
 
     def test_every_note_of_the_piano_compiles_fast_enough_to_do_at_start_up(self):

@@ -24,6 +24,7 @@ import sympy as sp
 from sympy.core.expr import Expr
 
 from daw.constants import DEFAULT_SAMPLE_RATE, Note
+from daw.effects import Echo, Reverb
 from daw.envelope import ACTIVE_DURATION
 from daw.filters import LowPass
 from daw.waves.time import TIME
@@ -50,17 +51,17 @@ class NoteSource:
     the first `n` samples of the note whenever it is played. The expression may
     use `TIME`, `WHITE_NOISE` and the envelope's `ACTIVE_DURATION`.
 
-    A filtered expression is refused: a filter remembers its past, so it
-    cannot render an arbitrary stretch of the signal."""
+    An expression with a filter or an effect (echo, reverb) is refused: they
+    remember their past, so they cannot render an arbitrary stretch."""
 
     def __init__(
         self, expression: Expr, sample_rate: int = DEFAULT_SAMPLE_RATE
     ) -> None:
         expression = sp.sympify(expression)
-        if expression.has(LowPass):
+        if expression.has(LowPass, Echo, Reverb):
             raise ValueError(
-                "a filtered signal cannot be rendered live: "
-                "a filter needs the whole signal from the start"
+                "a signal with a filter or an effect cannot be rendered live: "
+                "they need the whole signal from the start"
             )
         if sample_rate <= 0:
             raise ValueError("sample rate must be positive")
