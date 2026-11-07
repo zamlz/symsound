@@ -76,6 +76,7 @@ def test_every_example_is_covered_by_this_file():
     assert set(SCRIPTS) == {
         "c_major_shimmer",
         "classic_synths",
+        "echo_melody",
         "echo_pulse",
         "house",
         "house_with_low_pass",
@@ -699,3 +700,150 @@ class TestEchoPulse:
     def test_the_sound_has_not_changed(self, fake_sounddevice, tmp_path, monkeypatch):
         played, _ = self.play(fake_sounddevice, tmp_path, monkeypatch, "")
         check_golden("echo_pulse", played)
+
+
+NAMES = ("dry", "echo", "reverb")
+
+
+@pytest.fixture(scope="module")
+def module():
+    return runpy.run_path(str(EXAMPLES / "echo_melody.py"), run_name="echo_melody")
+
+
+@pytest.fixture(scope="module")
+def plays(tmp_path_factory):
+    """What the example plays when run, rendered once for the whole class: the
+    reverb is hundreds of delayed copies, so each run takes a while"""
+
+    class Speaker:
+        def __init__(self):
+            self.heard = []
+
+        def play(self, data, samplerate=None):
+            self.heard.append((np.asarray(data), samplerate))
+
+        def wait(self):
+            pass
+
+    speaker = Speaker()
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setitem(sys.modules, "sounddevice", speaker)
+        patch.chdir(tmp_path_factory.mktemp("echo_melody"))
+        runpy.run_path(str(EXAMPLES / "echo_melody.py"), run_name="__main__")
+    return speaker.heard
+
+
+@pytest.fixture
+def played(plays):
+    return {name: data for name, (data, _) in zip(NAMES, plays)}
+
+
+class TestEchoMelody:
+    """Three plucks, played dry, with an echo and in a room, all from `delay`"""
+
+    SR = DEFAULT_SAMPLE_RATE
+    NOTES = ((0.0, Note.C4), (0.5, Note.E4), (1.0, Note.G4))
+
+    def reference(self, module, seconds, copies):
+        """The notes placed at their start times, with `copies` of (delay,
+        gain) laid over them, each note evaluated at the earlier time"""
+        t = linspace(seconds, self.SR)
+        total = np.zeros(len(t))
+        for late, gain in copies:
+            for start, pitch in self.NOTES:
+                at = t - start - late
+                total += gain * np.where(
+                    at >= 0, evaluate(module["note"](pitch), at), 0.0
+                )
+        return total
+
+    @staticmethod
+    def turned_down(samples):
+        return samples / max(np.abs(samples).max(), 1.0)
+
+    def test_importing_it_plays_nothing(self, fake_sounddevice):
+        runpy.run_path(str(EXAMPLES / "echo_melody.py"), run_name="echo_melody")
+        assert fake_sounddevice.plays == []
+
+    def test_it_plays_the_dry_melody_then_the_echo_then_the_reverb(self, plays):
+        assert [len(d) for d, _ in plays] == [2 * self.SR, 4 * self.SR, 4 * self.SR]
+
+    def test_the_dry_melody_is_three_plucks_half_a_second_apart(self, module, played):
+        dry = played["dry"]
+        expected = self.reference(module, 2.0, [(0.0, 1.0)])
+        np.testing.assert_allclose(dry, self.turned_down(expected), atol=1e-9)
+
+    @pytest.mark.parametrize("start, pitch", NOTES)
+    def test_each_pluck_has_its_own_pitch(self, played, start, pitch):
+        window = played["dry"][
+            int((start + 0.02) * self.SR) : int((start + 0.12) * self.SR)
+        ]
+        spectrum = np.abs(np.fft.rfft(window * np.hanning(len(window)), 1 << 16))
+        assert np.argmax(spectrum) * self.SR / (1 << 16) == pytest.approx(
+            float(pitch), abs=4
+        )
+
+    def test_the_dry_melody_is_silent_once_the_last_pluck_has_died(self, played):
+        assert not played["dry"][int(1.4 * self.SR) :].any()
+
+    def test_the_echo_is_the_melody_plus_half_as_loud_copies(self, module, played):
+        copies = [(k * 0.375, 0.5**k) for k in range(7)]
+        expected = self.reference(module, 4.0, copies)
+        np.testing.assert_allclose(
+            played["echo"], self.turned_down(expected), atol=1e-9
+        )
+
+    def test_the_echo_goes_quiet_after_its_last_copy(self, played):
+        # The last copy of the last pluck starts at 1.0 + 6 * 0.375 = 3.25 s
+        # and dies about a tenth of a second later
+        assert not played["echo"][int(3.5 * self.SR) :].any()
+        assert np.abs(played["echo"][int(3.26 * self.SR) : int(3.3 * self.SR)]).max()
+
+    def test_the_reverb_rings_on_after_the_melody_is_over(self, played):
+        tail = played["reverb"][int(1.6 * self.SR) : int(2.4 * self.SR)]
+        assert np.sqrt((tail**2).mean()) > 1e-3
+        assert not played["dry"][int(1.6 * self.SR) :].any()
+
+    def test_the_reverb_tail_is_smoother_than_the_echo_it_is_built_like(self, played):
+        # Echoes are separate bursts with gaps between them (loudness swings
+        # a lot); the reverb's copies fill the gaps in
+        def loudness(samples):
+            step = self.SR // 50
+            chunks = samples[: len(samples) // step * step].reshape(-1, step)
+            return np.sqrt((chunks**2).mean(axis=1))
+
+        window = slice(int(1.6 * self.SR), int(2.4 * self.SR))
+        echo, room = (
+            loudness(played["echo"][window]),
+            loudness(played["reverb"][window]),
+        )
+        # The room never goes quiet, and it swings far less than the echo
+        assert room.min() > 1e-3
+        assert room.min() / room.max() > 5 * echo.min() / echo.max()
+
+    def test_the_reverb_tail_falls_steadily(self, played):
+        room = played["reverb"]
+        step = self.SR // 4
+        loud = [
+            np.sqrt((room[i : i + step] ** 2).mean())
+            for i in range(int(1.5 * self.SR), int(3.5 * self.SR), step)
+        ]
+        assert all(later < earlier for earlier, later in zip(loud, loud[1:]))
+
+    def test_nothing_clips_or_goes_missing(self, played):
+        for name, samples in played.items():
+            assert np.isfinite(samples).all(), name
+            assert np.abs(samples).max() <= 1.0 + 1e-9, name
+            assert np.abs(samples).max() > 0.2, name
+
+    def test_every_version_is_a_plain_signal_of_time(self, module):
+        from daw.waves.time import TIME
+
+        for signal, _ in module["versions"].values():
+            assert signal.free_symbols == {TIME}
+
+    def test_the_sound_has_not_changed(self, played):
+        check_golden(
+            "echo_melody",
+            np.concatenate([played[name] for name in NAMES]),
+        )

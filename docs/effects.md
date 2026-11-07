@@ -97,7 +97,8 @@ give each copy its own level, space the repeats unevenly, or filter each one
 `examples/echo_pulse.py` is this echo on a short sine pulse. It asks you for the
 delay when it starts, so you can hear how the spacing changes the sound: under
 about a tenth of a second the repeats blur into a buzz, and past a few tenths
-they are separate echoes.
+they are separate echoes. `examples/echo_melody.py` plays three plucked notes
+placed with `delay`, first dry, then with this echo, then with the reverb below.
 
 An echo is only as long as you build it. `repeats=4` means four copies, and the
 fifth is not there. Choose `repeats` so the last copy is quiet enough: with a
