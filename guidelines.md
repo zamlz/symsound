@@ -92,7 +92,6 @@ src/daw/               the library
   constants.py         Note table, DEFAULT_SAMPLE_RATE
   envelope.py          adsr_envelope, ACTIVE_DURATION
   filters.py           low_pass_filter (first-order IIR on the sample grid)
-  effects.py           echo, reverb (comb and all-pass filters on the sample grid)
   analysis.py          spectrogram_columns, peak_envelope (pure NumPy, no GUI)
   visualizer.py        visualize, snapshot (pygame, optional: daw[gui])
   keyboard.py          keyboard, keyboard_snapshot (pygame, optional: daw[gui])
