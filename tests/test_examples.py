@@ -17,7 +17,7 @@ import soundfile as sf
 from daw import keyboard as keyboard_module
 from daw.constants import DEFAULT_SAMPLE_RATE, Note
 from daw.live import Mixer, NoteSource
-from daw.waves.utils import compile
+from daw.waves.utils import compile, linspace
 from golden import check_golden
 from helpers import evaluate
 
@@ -32,10 +32,32 @@ NOT_PLAYED = {"classic_synths", "keyboard_synth"}
 INTERACTIVE = {"keyboard_synth"}
 
 
-def run_example(name, fake_sounddevice, tmp_path, monkeypatch):
-    """Run an example in a scratch directory and return its namespace"""
+class Typist:
+    """Stands in for `input`: types the given answers in turn and remembers
+    what it was asked"""
+
+    def __init__(self, answers):
+        self.answers = iter(answers)
+        self.prompts = []
+
+    def __call__(self, prompt=""):
+        self.prompts.append(prompt)
+        try:
+            return next(self.answers)
+        except StopIteration:
+            raise EOFError from None
+
+
+def run_example(name, fake_sounddevice, tmp_path, monkeypatch, answers=("",)):
+    """Run an example in a scratch directory and return its namespace.
+
+    An example that asks a question gets `answers` typed at it, by default
+    just Enter, which accepts every default. With `answers=None` the caller
+    has already put its own `input` in place."""
     monkeypatch.chdir(tmp_path)
     np.random.seed(0)
+    if answers is not None:
+        monkeypatch.setattr("builtins.input", Typist(answers))
     return runpy.run_path(str(EXAMPLES / f"{name}.py"), run_name="__main__")
 
 
@@ -54,6 +76,7 @@ def test_every_example_is_covered_by_this_file():
     assert set(SCRIPTS) == {
         "c_major_shimmer",
         "classic_synths",
+        "echo_pulse",
         "house",
         "house_with_low_pass",
         "keyboard_synth",
@@ -526,3 +549,153 @@ class TestKeyboardSynth:
         assert np.argmax(spectrum) * DEFAULT_SAMPLE_RATE / len(heard) == pytest.approx(
             440.0, abs=2.0
         )
+
+
+class TestEchoPulse:
+    """A sine pulse with echoes made of `delay`, the spacing typed at startup"""
+
+    SR = DEFAULT_SAMPLE_RATE
+
+    @pytest.fixture
+    def module(self):
+        return runpy.run_path(str(EXAMPLES / "echo_pulse.py"), run_name="echo_pulse")
+
+    def play(self, fake_sounddevice, tmp_path, monkeypatch, *answers):
+        typist = Typist(answers)
+        monkeypatch.setattr("builtins.input", typist)
+        run_example("echo_pulse", fake_sounddevice, tmp_path, monkeypatch, None)
+        return fake_sounddevice.plays[0][0], typist
+
+    @staticmethod
+    def shifted(samples, count):
+        return np.concatenate([np.zeros(count), samples[: len(samples) - count]])
+
+    def expected(self, module, spacing, length):
+        """The pulse plus its echoes, each one the pulse at an earlier time,
+        on the time grid `compile` uses for the length the example plays"""
+        seconds = module["pulse_length"] + module["repeats"] * spacing + module["tail"]
+        t = linspace(seconds, self.SR)
+        assert len(t) == length
+        total = np.array(evaluate(module["pulse"], t))
+        for k in range(1, module["repeats"] + 1):
+            late = k * spacing
+            total += module["feedback"] ** k * np.where(
+                t >= late, evaluate(module["pulse"], t - late), 0.0
+            )
+        return total
+
+    def test_importing_it_asks_nothing(self, monkeypatch):
+        def refuse(prompt=""):
+            raise AssertionError("asked a question on import")
+
+        monkeypatch.setattr("builtins.input", refuse)
+        runpy.run_path(str(EXAMPLES / "echo_pulse.py"), run_name="echo_pulse")
+
+    def test_the_pulse_is_a_440_hz_sine_a_tenth_of_a_second_long(self, module):
+        samples = compile(module["pulse"], 1.0)
+        on = np.flatnonzero(np.abs(samples) > 1e-6)
+        assert on[0] == 0 or on[0] < 10
+        assert on[-1] / self.SR == pytest.approx(0.13, abs=0.01)  # held, then faded
+        body = samples[: self.SR // 10]
+        spectrum = np.abs(np.fft.rfft(body * np.hanning(len(body)), 1 << 16))
+        assert np.argmax(spectrum) * self.SR / (1 << 16) == pytest.approx(440, abs=3)
+
+    def test_the_pulse_has_no_clicks_at_its_ends(self, module):
+        samples = compile(module["pulse"], 0.3)
+        assert abs(samples[0]) < 1e-3
+        assert abs(samples[-1]) == 0.0
+        assert np.abs(np.diff(samples)).max() < 0.1
+
+    @pytest.mark.parametrize("answer", ["0.25", "0.4", "0.1", "1"])
+    def test_the_typed_delay_is_the_spacing_of_the_echoes(
+        self, fake_sounddevice, tmp_path, monkeypatch, module, answer
+    ):
+        played, _ = self.play(fake_sounddevice, tmp_path, monkeypatch, answer)
+        spacing = float(answer)
+        np.testing.assert_allclose(
+            played, self.expected(module, spacing, len(played)), atol=1e-9
+        )
+
+    def test_each_echo_is_half_as_loud_as_the_one_before(
+        self, fake_sounddevice, tmp_path, monkeypatch, module
+    ):
+        played, _ = self.play(fake_sounddevice, tmp_path, monkeypatch, "0.3")
+        step = round(0.3 * self.SR)
+        heights = [
+            np.abs(played[k * step : k * step + self.SR // 5]).max() for k in range(9)
+        ]
+        np.testing.assert_allclose(
+            np.array(heights) / heights[0], 0.5 ** np.arange(9), rtol=1e-3
+        )
+
+    def test_the_echoes_are_the_pulse_at_its_pitch(
+        self, fake_sounddevice, tmp_path, monkeypatch
+    ):
+        played, _ = self.play(fake_sounddevice, tmp_path, monkeypatch, "0.5")
+        step = round(0.5 * self.SR)
+        window = played[2 * step : 2 * step + self.SR // 10]
+        spectrum = np.abs(np.fft.rfft(window * np.hanning(len(window)), 1 << 16))
+        assert np.argmax(spectrum) * self.SR / (1 << 16) == pytest.approx(440, abs=3)
+
+    def test_silence_between_the_echoes(self, fake_sounddevice, tmp_path, monkeypatch):
+        played, _ = self.play(fake_sounddevice, tmp_path, monkeypatch, "0.5")
+        gap = played[int(0.2 * self.SR) : int(0.5 * self.SR)]
+        assert not gap.any()
+
+    def test_enter_alone_takes_the_default(
+        self, fake_sounddevice, tmp_path, monkeypatch, module
+    ):
+        played, typist = self.play(fake_sounddevice, tmp_path, monkeypatch, "")
+        assert module["default_delay"] == 0.25
+        np.testing.assert_allclose(
+            played, self.expected(module, 0.25, len(played)), atol=1e-9
+        )
+        assert "[0.25]" in typist.prompts[0]
+
+    def test_nobody_to_ask_takes_the_default_too(
+        self, fake_sounddevice, tmp_path, monkeypatch, module
+    ):
+        played, _ = self.play(fake_sounddevice, tmp_path, monkeypatch)
+        np.testing.assert_allclose(
+            played, self.expected(module, 0.25, len(played)), atol=1e-9
+        )
+
+    def test_it_asks_again_until_the_answer_makes_sense(
+        self, fake_sounddevice, tmp_path, monkeypatch, capsys, module
+    ):
+        answers = ["abc", "-1", "0", "nan", "inf", " 0.3 "]
+        played, typist = self.play(fake_sounddevice, tmp_path, monkeypatch, *answers)
+        assert len(typist.prompts) == len(answers)
+        np.testing.assert_allclose(
+            played, self.expected(module, 0.3, len(played)), atol=1e-9
+        )
+        printed = capsys.readouterr().out
+        assert "'abc' is not a number" in printed
+        # -1, 0, nan and inf are all refused with the same reason
+        assert printed.count("more than zero seconds") == 4
+
+    def test_it_plays_long_enough_to_hear_every_echo(
+        self, fake_sounddevice, tmp_path, monkeypatch, module
+    ):
+        for answer in ("0.1", "0.7"):
+            fake_sounddevice.plays.clear()
+            played, _ = self.play(fake_sounddevice, tmp_path, monkeypatch, answer)
+            seconds = module["pulse_length"] + 8 * float(answer) + module["tail"]
+            assert len(played) == int(seconds * self.SR)  # as `compile` counts
+            # The last echo is 1/256 of the pulse, and nothing is cut off
+            assert np.abs(played[-self.SR // 4 :]).max() == 0.0
+
+    def test_badly_overlapping_echoes_still_do_not_clip(
+        self, fake_sounddevice, tmp_path, monkeypatch
+    ):
+        played, _ = self.play(fake_sounddevice, tmp_path, monkeypatch, "0.01")
+        assert np.abs(played).max() <= 1.0
+
+    def test_it_is_a_plain_signal_of_time(self, module):
+        from daw.waves.time import TIME
+
+        assert module["echo"](module["pulse"], 0.25).free_symbols == {TIME}
+
+    def test_the_sound_has_not_changed(self, fake_sounddevice, tmp_path, monkeypatch):
+        played, _ = self.play(fake_sounddevice, tmp_path, monkeypatch, "")
+        check_golden("echo_pulse", played)

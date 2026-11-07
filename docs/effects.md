@@ -94,6 +94,11 @@ height. That is the sum, spelled out, so you can change it however you like:
 give each copy its own level, space the repeats unevenly, or filter each one
 (`low_pass_filter(delay(...), 2000)`) so the repeats get duller.
 
+`examples/echo_pulse.py` is this echo on a short sine pulse. It asks you for the
+delay when it starts, so you can hear how the spacing changes the sound: under
+about a tenth of a second the repeats blur into a buzz, and past a few tenths
+they are separate echoes.
+
 An echo is only as long as you build it. `repeats=4` means four copies, and the
 fifth is not there. Choose `repeats` so the last copy is quiet enough: with a
 `feedback` of 0.5, ten repeats end 60 dB down.

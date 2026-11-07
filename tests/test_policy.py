@@ -79,6 +79,7 @@ def test_tests_are_not_silently_skipped():
 def test_golden_files_exist_for_every_audible_example():
     expected = {
         "c_major_shimmer",
+        "echo_pulse",
         "house",
         "house_with_low_pass",
         "keyboard_synth",
