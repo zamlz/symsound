@@ -26,6 +26,16 @@ from daw.waves.utils import play
 play(sine(440), duration=2.0)
 ```
 
+## Why this exists
+
+`daw` was written to explore how audio works under the hood, at a mathematical
+level: a sound is a function of time, an envelope is a piece of algebra, a
+filter is a differential equation, and an echo is a sum of delays. It is a place
+to read, run and change those ideas, and it favours being clear over being fast.
+It is a learning project, not a tool for making audio in practice.
+
+It was written with AI assistance (Claude Code).
+
 ## How it works
 
 1. Build an expression: `sine(440) * 0.5`, `square(lfo)`, `adsr_envelope(...)`.
@@ -130,3 +140,9 @@ the test suite work on machines without an audio backend.
   time, and the filter starts at rest at the first sample.
 - White noise is a single shared symbol, so every use of `WHITE_NOISE` in one
   expression sees the same samples.
+
+## License
+
+`daw` is free software under the GNU General Public License, version 3 or (at
+your option) any later version. See [LICENSE](LICENSE). It comes with no
+warranty.
