@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """Guards that keep the test suite honest as the project grows
 
 These tests do not check behavior. They fail when a change adds code without
@@ -14,6 +16,7 @@ from pathlib import Path
 import daw
 
 TESTS = Path(__file__).parent
+ROOT = TESTS.parent
 SOURCES = {
     p: p.read_text() for p in TESTS.glob("test_*.py") if p.name != Path(__file__).name
 }
@@ -89,3 +92,55 @@ def test_golden_files_exist_for_every_audible_example():
     }
     present = {p.stem for p in (TESTS / "golden").glob("*.npy")}
     assert expected <= present
+
+
+LICENSE_LINE = "# SPDX-License-Identifier: GPL-3.0-or-later"
+COPYRIGHT_START = "# Copyright (C) "
+
+
+def source_files():
+    """Every source file of the project: the Python in the four code folders,
+    and the flake"""
+    for folder in ("src", "tests", "examples", "tools"):
+        yield from sorted((ROOT / folder).rglob("*.py"))
+    yield ROOT / "flake.nix"
+
+
+def test_every_source_file_is_found():
+    names = {p.relative_to(ROOT).as_posix() for p in source_files()}
+    assert {
+        "src/daw/__init__.py",
+        "src/daw/waves/utils.py",
+        "tests/test_policy.py",
+        "examples/house.py",
+        "tools/build_docs.py",
+        "flake.nix",
+    } <= names
+
+
+def test_every_source_file_starts_with_the_license_header():
+    # An optional shebang, then the SPDX line and the copyright line, so a
+    # single file copied out of the project still says how it is licensed
+    missing = []
+    for path in source_files():
+        lines = path.read_text().splitlines()
+        if lines and lines[0].startswith("#!"):
+            lines = lines[1:]
+        header = lines[:2]
+        if (
+            len(header) < 2
+            or header[0] != LICENSE_LINE
+            or not header[1].startswith(COPYRIGHT_START)
+        ):
+            missing.append(path.relative_to(ROOT).as_posix())
+    assert not missing, (
+        f"missing the license header (SPDX line, then a copyright line): {missing}"
+    )
+
+
+def test_the_license_header_matches_the_license_declared_for_the_package():
+    declared = re.search(
+        r'^license = "([^"]+)"', (ROOT / "pyproject.toml").read_text(), re.M
+    )
+    assert declared, "pyproject.toml declares no license"
+    assert LICENSE_LINE == f"# SPDX-License-Identifier: {declared.group(1)}"

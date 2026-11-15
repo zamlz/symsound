@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """A window that shows a signal as it plays: a scope, a spectrogram, a seek bar.
 
 `visualize(expression, duration)` compiles the signal, plays it, and draws what

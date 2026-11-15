@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """A short sine pulse with an echo, whose delay you choose when it starts.
 
 Run it and type the number of seconds between the echoes (or press Enter for

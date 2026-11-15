@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """Golden-file support: coarse fingerprints of the signals the examples make
 
 A fingerprint is every PRIME-th sample of the compiled signal. It is small to
