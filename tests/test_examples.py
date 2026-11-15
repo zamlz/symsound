@@ -1025,7 +1025,8 @@ class TestStereoPan:
     def test_sweep_is_the_chord_times_equal_power_gains(self, pan_module, pan_played):
         t = linspace(4.0, self.SR)
         chord = evaluate(pan_module["chord_with_fade"](4.0), t)
-        angle = (np.sin(2 * np.pi * 0.5 * t) + 1) * np.pi / 4
+        # The pan angle swings a quarter turn either side of the centre
+        angle = np.pi / 4 * np.sin(2 * np.pi * 0.5 * t) + np.pi / 4
         np.testing.assert_allclose(
             pan_played["sweep"],
             self.turned_down(chord * np.cos(angle), chord * np.sin(angle)),

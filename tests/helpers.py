@@ -64,8 +64,8 @@ def ref_adsr(attack, decay, sustain, release, active, t):
     return out
 
 
-def ref_pan_gains(position):
-    """Equal-power pan gains written with a plain angle in degrees: 0 is all
-    left, 90 all right"""
-    degrees = (np.asarray(position) + 1) * 45
-    return np.cos(np.radians(degrees)), np.sin(np.radians(degrees))
+def ref_pan_gains(angle):
+    """Equal-power pan gains written with the angle in degrees from hard left:
+    the pan angle is measured from the centre, so 45 degrees of it is hard right"""
+    from_left = np.radians(45 + np.degrees(np.asarray(angle)))
+    return np.cos(from_left), np.sin(from_left)

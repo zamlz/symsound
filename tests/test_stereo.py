@@ -11,7 +11,7 @@ from daw.waves.basic import sine
 from daw.waves.utils import WHITE_NOISE, compile, play, save
 from helpers import evaluate, ref_pan_gains
 
-positions = st.floats(min_value=-1, max_value=1, allow_nan=False)
+angles = st.floats(min_value=-10, max_value=10, allow_nan=False)
 RATE = 8000
 
 
@@ -93,27 +93,32 @@ class TestCompileStereo:
         want = evaluate(sine(440) * 0.5, np.arange(RATE // 4) / RATE)
         np.testing.assert_allclose(samples, want, atol=1e-12)
 
-    @given(positions)
-    def test_stereo_of_a_signal_is_the_signal_in_both_columns(self, position):
+    def test_stereo_of_a_signal_is_the_signal_in_both_columns(self):
         mono = compile(sine(440), 0.05, RATE)
         both = compile(mono_to_stereo(sine(440)), 0.05, RATE)
         np.testing.assert_array_equal(both, np.stack([mono, mono], axis=1))
 
-    @given(positions)
-    def test_panned_columns_are_the_gains_times_the_signal(self, position):
+    @given(angles)
+    def test_panned_columns_are_the_gains_times_the_signal(self, angle):
         mono = compile(sine(440), 0.05, RATE)
-        both = compile(pan(sine(440), position), 0.05, RATE)
-        gain_left, gain_right = ref_pan_gains(position)
+        both = compile(pan(sine(440), angle), 0.05, RATE)
+        gain_left, gain_right = ref_pan_gains(angle)
         np.testing.assert_allclose(both[:, 0], gain_left * mono, atol=1e-9)
         np.testing.assert_allclose(both[:, 1], gain_right * mono, atol=1e-9)
 
     def test_a_hard_panned_tone_is_silent_in_the_other_ear(self):
-        left = compile(pan(sine(440), -1), 0.25, RATE)
-        right = compile(pan(sine(440), 1), 0.25, RATE)
+        # Written with sp.pi the angle is exact, so the far ear is exactly silent
+        left = compile(pan(sine(440), -sp.pi / 4), 0.25, RATE)
+        right = compile(pan(sine(440), sp.pi / 4), 0.25, RATE)
         assert np.abs(left[:, 0]).max() == pytest.approx(1, abs=0.01)
         assert not left[:, 1].any()
         assert not right[:, 0].any()
         assert np.abs(right[:, 1]).max() == pytest.approx(1, abs=0.01)
+
+    def test_with_a_float_angle_the_far_ear_is_silent_to_rounding(self):
+        # np.pi / 4 is not exactly pi / 4, so what is left is rounding error
+        left = compile(pan(sine(440), -np.pi / 4), 0.25, RATE)
+        assert np.abs(left[:, 1]).max() < 1e-12
 
     def test_a_centred_tone_is_3_db_down_in_each_ear(self):
         both = compile(pan(sine(440), 0), 0.25, RATE)
@@ -151,7 +156,7 @@ class TestOutput:
 
     def test_saved_channels_round_trip(self, tmp_path):
         out = tmp_path / "pair.wav"
-        pair = pan(sine(440), -0.5)
+        pair = pan(sine(440), -np.pi / 8)
         save(pair, 0.25, str(out), sample_rate=RATE)
         data, _ = sf.read(out, dtype="float64")
         want = compile(pair, 0.25, RATE)
@@ -161,7 +166,7 @@ class TestOutput:
 
     def test_a_hard_panned_file_is_silent_on_one_channel(self, tmp_path):
         out = tmp_path / "left.wav"
-        save(pan(sine(440), -1), 0.25, str(out), sample_rate=RATE)
+        save(pan(sine(440), -sp.pi / 4), 0.25, str(out), sample_rate=RATE)
         data, _ = sf.read(out)
         assert not data[:, 1].any()
         assert np.abs(data[:, 0]).max() > 0.9

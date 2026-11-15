@@ -4,7 +4,8 @@
 - [Two signals, one for each ear](#two-signals-one-for-each-ear)
 - [Placing a sound: `pan`](#placing-a-sound-pan)
   - [Why equal power](#why-equal-power)
-  - [A position that moves](#a-position-that-moves)
+  - [An angle that moves](#an-angle-that-moves)
+  - [An angle with no limit](#an-angle-with-no-limit)
 - [Effects on both sides: `map`](#effects-on-both-sides-map)
 - [Looking at a stereo signal](#looking-at-a-stereo-signal)
 - [An example to run](#an-example-to-run)
@@ -60,13 +61,15 @@ not have yet.
 ## Placing a sound: `pan`
 
 ```python
+import sympy as sp
+
 from daw.effects import pan
 from daw.waves.basic import sine
 from daw.waves.utils import plot
 
-left_ish = pan(sine(440), -0.5)
+left_ish = pan(sine(440), -sp.pi / 8)
 plot(left_ish, duration=0.01, stacked=True,
-     title="pan(sine(440), -0.5): louder on the left",
+     title="pan(sine(440), -pi/8): louder on the left",
      output_file="img/stereo-pan.png")
 print(left_ish.left, "|", left_ish.right)
 ```
@@ -81,55 +84,68 @@ sqrt(sqrt(2)/4 + 1/2)*sin(880*pi*time) | sqrt(1/2 - sqrt(2)/4)*sin(880*pi*time)
 
 ![A panned sine, louder on the left](img/stereo-pan.png)
 
-`pan(signal, position)` puts a mono signal between the ears. `-1` is all left,
-`0` is the centre and `1` is all right.
+`pan(signal, angle)` puts a mono signal between the ears. The angle is in
+radians, measured from the centre: `0` is the middle, `pi/4` (45 degrees) is all
+right and `-pi/4` is all left. Write degrees with `sp.rad(45)`. Writing `pi` as
+`sp.pi`, as above, keeps the gains exact, so the far ear at the edge is exactly
+silent; a float such as `np.pi / 4` leaves a trace of rounding error there.
+
+At angle `0` the sound is the same in both ears: it sounds centred, like mono,
+but each ear gets `1/sqrt(2)` of the signal (3 dB less), not all of it.
+`mono_to_stereo(x)` gives each ear the whole signal, so `pan(x, 0)` is
+`mono_to_stereo(x) / sqrt(2)`. The reason is below.
 
 ### Why equal power
 
 The obvious way to pan is to fade one side down while the other comes up in a
 straight line. At the centre each side is then half as loud, and the two halves
 add up to less sound than either end: the sound sinks in the middle. What the ear
-judges as loudness follows power, which is the square of the gain, so the
-gains should keep `left**2 + right**2` the same everywhere. `pan` does that with
-a quarter turn: the left gain is `cos(angle)` and the right is `sin(angle)`,
-where the angle goes from 0 (all left) to 90 degrees (all right) as the position
-goes from -1 to 1. Since `cos**2 + sin**2 = 1`, the power never changes.
+judges as loudness follows power, which is the square of the gain, so the gains
+should keep `left**2 + right**2` the same everywhere. `pan` does that with a
+quarter turn: the left gain is `cos(pi/4 + angle)` and the right is
+`sin(pi/4 + angle)`. Since `cos**2 + sin**2 = 1`, the power never changes.
 
 ```python
 import matplotlib.pyplot as plt
 import numpy as np
 
-position = np.linspace(-1, 1, 400)
-angle = (position + 1) * np.pi / 4
-left, right = np.cos(angle), np.sin(angle)
-linear_left, linear_right = (1 - position) / 2, (1 + position) / 2
+degrees = np.linspace(-180, 180, 721)
+angle = np.radians(degrees)
+left, right = np.cos(np.pi / 4 + angle), np.sin(np.pi / 4 + angle)
+
+# A straight-line fade, for comparison, only exists between the ears
+between = np.abs(degrees) <= 45
+spread = degrees[between] / 45
+linear_left, linear_right = (1 - spread) / 2, (1 + spread) / 2
 
 fig, (gains, power) = plt.subplots(1, 2, figsize=(10, 4), sharex=True)
-gains.plot(position, left, label="left: cos(angle)")
-gains.plot(position, right, label="right: sin(angle)")
-gains.plot(position, linear_left, "--", color="grey", label="straight-line fade")
-gains.plot(position, linear_right, "--", color="grey")
-gains.axvline(0, color="black", lw=0.5)
-gains.set_title("The gain of each side")
-gains.set_xlabel("pan position")
+for axes in (gains, power):
+    axes.axvspan(-45, 45, color="grey", alpha=0.12)
+    axes.set_xlabel("pan angle [degrees]")
+    axes.set_xticks(range(-180, 181, 45))
+    axes.grid(True)
+gains.plot(degrees, left, label="left: cos(pi/4 + angle)")
+gains.plot(degrees, right, label="right: sin(pi/4 + angle)")
+gains.plot(degrees[between], linear_left, "--", color="grey",
+           label="straight-line fade")
+gains.plot(degrees[between], linear_right, "--", color="grey")
+gains.set_title("The gain of each side (shaded: between the ears)")
 gains.set_ylabel("gain")
-gains.legend()
-gains.grid(True)
+gains.legend(loc="lower left", fontsize=8)
 
-power.plot(position, left**2 + right**2, label="equal power")
-power.plot(position, linear_left**2 + linear_right**2, "--", color="grey",
+power.plot(degrees, left**2 + right**2, label="equal power")
+power.plot(degrees[between], linear_left**2 + linear_right**2, "--", color="grey",
            label="straight-line fade")
 power.set_ylim(0, 1.2)
 power.set_title("Left power + right power")
-power.set_xlabel("pan position")
 power.set_ylabel("power")
 power.legend(loc="lower center")
-power.grid(True)
 fig.tight_layout()
 fig.savefig("img/stereo-equal-power.png", dpi=100)
 print(round(float(np.cos(np.pi / 4)), 4), "at the centre, per side")
 print(round(20 * np.log10(np.cos(np.pi / 4)), 2), "dB at the centre, per side")
-print(round(float(linear_left[200] ** 2 + linear_right[200] ** 2), 2),
+print(round(float(linear_left[len(linear_left) // 2] ** 2
+                  + linear_right[len(linear_right) // 2] ** 2), 2),
       "total power at the centre of a straight-line fade")
 ```
 <!-- md-code: id="stereo-equal-power"; bin="python3" -->
@@ -146,36 +162,37 @@ Output:
 ![Equal-power and straight-line pan gains, and the power each gives](img/stereo-equal-power.png)
 
 The left graph shows the gains: the solid curves are what `pan` uses, the
-dashed lines are the straight-line fade. The right graph shows the power each
+dashed lines are the straight-line fade, and the shaded band is the range
+between the ears, from -45 to 45 degrees. The right graph shows the power each
 one delivers. The equal-power law stays flat at 1. The straight-line fade drops to
 a half at the centre, which is the dip you hear. The price of staying level is
 that a centred signal is about 3 dB quieter in each ear than the same signal hard
 left or right: each side is `1/sqrt(2)` of it, and the two together make up
 the same power as one hard-panned side.
 
-### A position that moves
+### An angle that moves
 
-The position can also be an expression of `TIME`, so a sound can travel. Pass a
-slow sine for an auto-pan, or a ramp for a sweep. A moving position is held
-between -1 and 1, so a wave that overshoots stops at the edge instead of
-turning the sound out of phase.
+The angle can also be an expression of `TIME`, so a sound can travel. Pass a
+slow sine for an auto-pan: a sine scaled to `pi/4` swings the sound from hard
+left to hard right and back.
 
 ```python
 import numpy as np
 import matplotlib.pyplot as plt
+import sympy as sp
 
 from daw.effects import pan
 from daw.waves.basic import sine
 from daw.waves.utils import compile
 
 # A constant 1 makes the two sides the gains themselves
-gains = compile(pan(1, sine(1)), duration=2.0)
+gains = compile(pan(1, sp.pi / 4 * sine(1)), duration=2.0)
 t = np.arange(len(gains)) / 44100
 
 fig, (top, bottom) = plt.subplots(2, 1, figsize=(10, 5), sharex=True)
-top.plot(t, np.sin(2 * np.pi * t), color="grey")
-top.set_title("The position: sine(1), one sweep across the ears each second")
-top.set_ylabel("position")
+top.plot(t, 45 * np.sin(2 * np.pi * t), color="grey")
+top.set_title("The angle: pi/4 * sine(1), a sweep across the ears each second")
+top.set_ylabel("angle [degrees]")
 top.grid(True)
 bottom.plot(t, gains[:, 0], label="left gain")
 bottom.plot(t, gains[:, 1], label="right gain")
@@ -198,12 +215,62 @@ Output:
 ```
 <!-- md-code-output: id="stereo-auto-pan" -->
 
-![A sine moving the pan position, and the gains that result](img/stereo-auto-pan.png)
+![A sine moving the pan angle, and the gains that result](img/stereo-auto-pan.png)
 
 The last line prints the spread of `left**2 + right**2` over the whole
-sweep: zero, so the loudness stays level as the sound moves. A fixed position
-is a plain number from -1 to 1, and anything outside that range is an error.
-A moving position may only depend on `TIME`.
+sweep: zero, so the loudness stays level as the sound moves. An angle may only
+depend on `TIME`.
+
+### An angle with no limit
+
+The angle is not clamped. The gains repeat every whole turn (`2*pi`), so any
+number is fine, and an angle that keeps growing turns the sound round and round.
+Past the edge at `pi/4` it carries on: one ear's gain goes through zero and
+becomes negative, a copy of the signal upside down (anti-phase), and the other
+follows half a turn later. Power stays level the whole way.
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+import sympy as sp
+
+from daw.effects import pan
+from daw.waves.time import TIME
+from daw.waves.utils import compile
+
+# One whole turn every two seconds, for four seconds
+gains = compile(pan(1, sp.pi * TIME), duration=4.0)
+t = np.arange(len(gains)) / 44100
+
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.plot(t, gains[:, 0], label="left gain")
+ax.plot(t, gains[:, 1], label="right gain")
+ax.plot(t, gains[:, 0] ** 2 + gains[:, 1] ** 2, "--", color="grey",
+        label="total power")
+ax.axhline(0, color="black", lw=0.5)
+ax.set_title("pan(1, pi * TIME): the angle turns once every two seconds")
+ax.set_xlabel("Time [s]")
+ax.set_ylabel("gain")
+ax.legend(loc="lower right")
+ax.grid(True)
+fig.tight_layout()
+fig.savefig("img/stereo-spin.png", dpi=100)
+print(round(float(gains[:, 0].min()), 3), round(float(gains[:, 0].max()), 3))
+```
+<!-- md-code: id="stereo-spin"; bin="python3" -->
+
+Output:
+```
+-1.0 1.0
+
+```
+<!-- md-code-output: id="stereo-spin" -->
+
+![The two gains while the pan angle keeps turning](img/stereo-spin.png)
+
+The left gain goes from 1 down to -1 and back each turn, which is the sound
+passing through anti-phase on the far side. For a sound that stays between the
+ears, keep the angle within `pi/4` of the centre.
 
 ## Effects on both sides: `map`
 
@@ -285,7 +352,7 @@ spectrogram(pair, duration=1.0, channel="right", max_frequency=2000,
 
 `examples/stereo_pan.py` plays three short versions in turn: three plucked notes
 placed hard left, centre and hard right with `pan`, an echo that bounces from ear
-to ear, and a held chord whose position follows `sine(0.5)` so it sweeps across
+to ear, and a held chord whose pan angle follows `pi/4 * sine(0.5)` so it sweeps across
 and back. Use headphones.
 
 ```sh

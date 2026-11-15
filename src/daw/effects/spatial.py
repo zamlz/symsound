@@ -11,29 +11,29 @@ from daw.stereo import StereoExpr
 from daw.waves.time import TIME
 
 
-def pan(signal: Expr, position: Expr | float) -> StereoExpr:
-    """A mono signal placed between the ears.
+def pan(signal: Expr, angle: Expr | float) -> StereoExpr:
+    """A mono signal placed between the ears by an angle, in radians.
 
-    `position` runs from -1 (all left) through 0 (centre) to 1 (all right). The
-    gains follow an equal-power law, `cos` for the left and `sin` for the right
-    as the position moves across a quarter turn, so `left**2 + right**2` is the
-    same everywhere and the sound does not get louder or quieter as it moves.
-    At the centre each side is `1/sqrt(2)`.
+    The angle is measured from the centre: 0 is the middle, `pi/4` (45 degrees)
+    is all right and `-pi/4` is all left. The gains are the sine and cosine of
+    the angle from hard left, `left = cos(pi/4 + angle)` and
+    `right = sin(pi/4 + angle)`, so `left**2 + right**2` is the same for every
+    angle and the sound never gets louder or quieter as it moves. At the centre
+    each side is `1/sqrt(2)`.
 
-    The position is either a plain number, which must be between -1 and 1, or an
-    expression of `TIME` that moves the sound as it plays (`sine(0.5)` sweeps it
-    from ear to ear and back every two seconds). A moving position is held
-    between -1 and 1, so a wave that overshoots stops at the edge instead of
-    flipping the sound out of phase."""
-    place = sp.sympify(position)
-    if place.free_symbols - {TIME}:
-        raise ValueError("pan position may only depend on TIME")
-    if place.free_symbols:
-        place = sp.Min(1, sp.Max(-1, place))
-    elif not place.is_real:
-        raise ValueError("pan position must be a real number or a function of TIME")
-    elif place < -1 or place > 1:
-        raise ValueError("pan position must be between -1 and 1")
+    The angle is any number, or any expression of `TIME` that moves the sound
+    as it plays (`pi/4 * sine(0.5)` sweeps it from ear to ear and back every two
+    seconds). It is not limited: the gains are periodic, one turn is `2*pi`, and
+    past `pi/4` the sound keeps turning past the edge, one side changing sign
+    (a copy in anti-phase) until it comes round again. For a sound that stays
+    between the ears, keep the angle within `pi/4` of the centre. Write `pi` as
+    `sympy.pi` for exact gains: the far ear is then exactly silent at the edge,
+    where a float like `numpy.pi / 4` leaves a trace of rounding error."""
+    turn = sp.sympify(angle)
+    if turn.free_symbols - {TIME}:
+        raise ValueError("pan angle may only depend on TIME")
+    if not turn.free_symbols and not turn.is_real:
+        raise ValueError("pan angle must be a real number or a function of TIME")
     signal = sp.sympify(signal)
-    angle = sp.pi * (place + 1) / 4
-    return StereoExpr(sp.cos(angle) * signal, sp.sin(angle) * signal)
+    from_left = sp.pi / 4 + turn
+    return StereoExpr(sp.cos(from_left) * signal, sp.sin(from_left) * signal)

@@ -475,7 +475,7 @@ class TestPlotStereo:
         assert ax.lines[0].get_xdata()[-1] == pytest.approx(2.0, abs=0.01)
 
     def test_a_panned_signal_is_louder_on_the_side_it_is_panned_to(self, shown):
-        plot(pan(sine(5), -0.5), 1.0, sample_rate=SR)
+        plot(pan(sine(5), -np.pi / 8), 1.0, sample_rate=SR)
         left, right = plt.gcf().axes[0].lines
         assert np.abs(left.get_ydata()).max() > 2 * np.abs(right.get_ydata()).max()
 

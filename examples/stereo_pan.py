@@ -4,14 +4,16 @@ from ear to ear, and a chord that sweeps from side to side.
 
 Each version plays in turn. Use headphones, or two speakers, to hear it.
 
-* placed: `pan` puts C hard left, E in the centre and G hard right.
+* placed: `pan` puts C hard left (-pi/4), E in the centre (0) and G hard
+  right (pi/4).
 * ping-pong: the melody starts in the left ear and each echo goes to the
   opposite ear from the one before.
-* sweep: a held chord whose pan position is a slow sine, so it travels across
-  the ears and back (`pan` takes an expression of `TIME` as the position).
+* sweep: a held chord whose pan angle is a slow sine, so it travels across
+  the ears and back (`pan` takes an expression of `TIME` as the angle).
 """
 
 import numpy as np
+import sympy as sp
 
 from daw.constants import Note
 from daw.effects import delay, pan
@@ -27,7 +29,7 @@ echo_spacing = 0.375
 echo_feedback = 0.6
 echo_repeats = 6
 
-# Sweep: the position goes from ear to ear and back once every two seconds
+# Sweep: the angle goes from ear to ear and back once every two seconds
 sweep_rate = 0.5
 sweep_seconds = 4.0
 chord_level = 0.3  # three notes add up, so each is turned down
@@ -64,9 +66,9 @@ def chord_with_fade(seconds):
 
 # C left, E centre, G right, one every half second
 placed = mix(
-    pan(note(Note.C4), -1),
+    pan(note(Note.C4), -sp.pi / 4),
     pan(delay(note(Note.E4), 0.5), 0),
-    pan(delay(note(Note.G4), 1.0), 1),
+    pan(delay(note(Note.G4), 1.0), sp.pi / 4),
 )
 
 melody = note(Note.C4) + delay(note(Note.E4), 0.5) + delay(note(Note.G4), 1.0)
@@ -76,7 +78,7 @@ versions = {
     "placed": (placed, 2.0),
     "ping-pong": (ping_pong(melody, echo_spacing, echo_feedback, echo_repeats), 4.0),
     "sweep": (
-        pan(chord_with_fade(sweep_seconds), sine(sweep_rate)),
+        pan(chord_with_fade(sweep_seconds), sp.pi / 4 * sine(sweep_rate)),
         sweep_seconds,
     ),
 }
