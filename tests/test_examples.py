@@ -31,9 +31,11 @@ NOT_PLAYED = {"classic_synths", "keyboard_synth"}
 # These open a window that stays until a person closes it, so running one as a
 # script would never finish: they are run with the window loop replaced below
 INTERACTIVE = {"keyboard_synth"}
-# These play stereo: an array with a column for each ear. Their sound is checked
-# by their own test class (golden file included) rather than the generic one
+# These play stereo: an array with a column for each ear
 STEREO = {"stereo_pan"}
+# These have a golden file of everything they play, checked by their own test
+# class, so the generic check of just the first thing played does not apply
+OWN_GOLDEN = {"echo_melody", "stereo_pan"}
 
 
 class Typist:
@@ -260,7 +262,9 @@ class TestHouseFilterSweep:
             assert wet_step <= dry_step * 1.5 + 0.01
 
 
-@pytest.mark.parametrize("name", [n for n in SCRIPTS if n not in NOT_PLAYED | STEREO])
+@pytest.mark.parametrize(
+    "name", [n for n in SCRIPTS if n not in NOT_PLAYED | OWN_GOLDEN]
+)
 def test_example_sound_has_not_changed(name, fake_sounddevice, tmp_path, monkeypatch):
     run_example(name, fake_sounddevice, tmp_path, monkeypatch)
     check_golden(name, fake_sounddevice.plays[0][0])
