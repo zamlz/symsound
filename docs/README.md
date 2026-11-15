@@ -11,6 +11,7 @@ implemented. Read them in order the first time, then use them as reference.
 | [Envelopes](envelopes.md) | `adsr_envelope` and shaping a sound's loudness over time |
 | [Filters](filters.md) | `low_pass_filter`, including sweeping the cutoff |
 | [Delay, echo and reverb](effects.md) | `delay`, and how to build an echo and a reverb from it |
+| [Stereo](stereo.md) | `StereoExpr`, `mono_to_stereo`, `pan`: a signal for each ear |
 | [Combining signals](combining.md) | Mixing, gating, fading, crossfading, the building blocks of `house_with_low_pass.py` |
 | [Playing, saving and plotting](output.md) | `compile`, `play`, `save`, `plot` |
 | [Visualizing a signal](visualizing.md) | `visualize`, `snapshot`: a window with a scope, a spectrogram and a seek bar; `Player` |

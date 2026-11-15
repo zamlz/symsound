@@ -1,6 +1,8 @@
 
 import os
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,6 +14,7 @@ from scipy import signal as scipy_signal
 from sympy.core.expr import Expr
 
 from daw.constants import DEFAULT_SAMPLE_RATE
+from daw.stereo import StereoExpr
 from daw.waves.time import BPM, TIME
 
 WHITE_NOISE = sp.symbols('white_noise', real=True)
@@ -29,21 +32,40 @@ def white_noise(duration: float, sample_rate: int) -> npt.NDArray[np.float64]:
     return np.random.uniform(-1.0, 1.0, num_samples)
 
 
-def compile(
-        wave_function: Expr,
-        duration: float,
-        sample_rate: int = DEFAULT_SAMPLE_RATE
+def _samples(
+    function: Callable[..., Any],
+    times: npt.NDArray[np.float64],
+    noise: npt.NDArray[np.float64],
 ) -> npt.NDArray[np.float64]:
-    equation = sp.lambdify((TIME, WHITE_NOISE), wave_function, "numpy")
-    times = linspace(duration, sample_rate)
-    samples = equation(times, white_noise(duration, sample_rate))
+    samples = function(times, noise)
     # A constant expression (silence, a DC offset) comes back as one bare
     # number: repeat it so there is always one value per sample
     return np.array(np.broadcast_to(np.asarray(samples, dtype=float), times.shape))
 
 
+def compile(
+        wave_function: Expr | StereoExpr,
+        duration: float,
+        sample_rate: int = DEFAULT_SAMPLE_RATE
+) -> npt.NDArray[np.float64]:
+    """Samples of a signal: shape (n,) for an expression, (n, 2) for a `StereoExpr`.
+
+    Both sides of a `StereoExpr` share the same noise, so
+    `mono_to_stereo(white_noise)` is exactly the same in both ears."""
+    times = linspace(duration, sample_rate)
+    noise = white_noise(duration, sample_rate)
+    if isinstance(wave_function, StereoExpr):
+        sides = [
+            sp.lambdify((TIME, WHITE_NOISE), side, "numpy")
+            for side in (wave_function.left, wave_function.right)
+        ]
+        return np.stack([_samples(side, times, noise) for side in sides], axis=1)
+    equation = sp.lambdify((TIME, WHITE_NOISE), wave_function, "numpy")
+    return _samples(equation, times, noise)
+
+
 def play(
-    wave_function: Expr,
+    wave_function: Expr | StereoExpr,
     duration: float = 1.0,
     sample_rate: int = DEFAULT_SAMPLE_RATE
 ) -> None:
@@ -59,7 +81,7 @@ def play(
 
 
 def save(
-    wave_function: Expr,
+    wave_function: Expr | StereoExpr,
     duration: float,
     output_file: str,
     sample_rate: int = DEFAULT_SAMPLE_RATE
