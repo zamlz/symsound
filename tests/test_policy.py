@@ -85,6 +85,7 @@ def test_golden_files_exist_for_every_audible_example():
         "house_with_low_pass",
         "keyboard_synth",
         "ode_to_joy",
+        "stereo_pan",
         "weighted_blend_test",
     }
     present = {p.stem for p in (TESTS / "golden").glob("*.npy")}

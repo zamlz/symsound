@@ -6,6 +6,7 @@
   - [Why equal power](#why-equal-power)
   - [A position that moves](#a-position-that-moves)
 - [Effects on both sides: `map`](#effects-on-both-sides-map)
+- [An example to run](#an-example-to-run)
 - [The limits](#the-limits)
 <!-- md-toc: end -->
 
@@ -256,6 +257,17 @@ plot([ping_pong.left, ping_pong.right], duration=0.8,
 <!-- md-code: id="stereo-ping-pong"; bin="python3" -->
 
 ![Echoes alternating between the ears](img/stereo-ping-pong.png)
+
+## An example to run
+
+`examples/stereo_pan.py` plays three short versions in turn: three plucked notes
+placed hard left, centre and hard right with `pan`, an echo that bounces from ear
+to ear, and a held chord whose position follows `sine(0.5)` so it sweeps across
+and back. Use headphones.
+
+```sh
+python examples/stereo_pan.py
+```
 
 ## The limits
 

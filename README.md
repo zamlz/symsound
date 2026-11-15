@@ -113,6 +113,7 @@ python examples/house_with_low_pass.py
 python examples/ode_to_joy.py
 python examples/echo_pulse.py       # asks how many seconds between the echoes
 python examples/echo_melody.py      # three plucks: dry, with an echo, in a room
+python examples/stereo_pan.py       # three plucks placed left, centre and right; a bouncing echo; a sweep
 python examples/keyboard_synth.py   # a playable instrument (needs the gui extra)
 ```
 
