@@ -6,6 +6,7 @@
   - [Why equal power](#why-equal-power)
   - [A position that moves](#a-position-that-moves)
 - [Effects on both sides: `map`](#effects-on-both-sides-map)
+- [Looking at a stereo signal](#looking-at-a-stereo-signal)
 - [An example to run](#an-example-to-run)
 - [The limits](#the-limits)
 <!-- md-toc: end -->
@@ -26,8 +27,7 @@ from daw.waves.utils import compile, plot
 pair = StereoExpr(sine(440), sine(660))
 samples = compile(pair, duration=0.5)
 print(samples.shape)
-plot([pair.left, pair.right], duration=0.01,
-     labels=["left: 440 Hz", "right: 660 Hz"], stacked=True,
+plot(pair, duration=0.01, stacked=True,
      title="A different pitch in each ear",
      output_file="img/stereo-pair.png")
 ```
@@ -65,8 +65,7 @@ from daw.waves.basic import sine
 from daw.waves.utils import plot
 
 left_ish = pan(sine(440), -0.5)
-plot([left_ish.left, left_ish.right], duration=0.01,
-     labels=["left", "right"], stacked=True,
+plot(left_ish, duration=0.01, stacked=True,
      title="pan(sine(440), -0.5): louder on the left",
      output_file="img/stereo-pan.png")
 print(left_ish.left, "|", left_ish.right)
@@ -222,8 +221,7 @@ from daw.waves.utils import plot
 beep = sine(500) * sp.Piecewise((1, (TIME >= 0) & (TIME < 0.05)), (0, True))
 dry = StereoExpr(beep, 0)
 wet = dry.map(lambda side: side + 0.5 * delay(side, 0.2))
-plot([wet.left, wet.right], duration=0.5,
-     labels=["left", "right"], stacked=True,
+plot(wet, duration=0.5, stacked=True,
      title="map(lambda side: side + 0.5 * delay(side, 0.2))",
      output_file="img/stereo-map.png")
 ```
@@ -249,14 +247,39 @@ beep = sine(500) * sp.Piecewise((1, (TIME >= 0) & (TIME < 0.05)), (0, True))
 left = beep + 0.25 * delay(beep, 0.4)
 right = 0.5 * delay(beep, 0.2) + 0.125 * delay(beep, 0.6)
 ping_pong = StereoExpr(left, right)
-plot([ping_pong.left, ping_pong.right], duration=0.8,
-     labels=["left", "right"], stacked=True,
+plot(ping_pong, duration=0.8, stacked=True,
      title="The beep, then echoes bouncing left, right, left, right",
      output_file="img/stereo-ping-pong.png")
 ```
 <!-- md-code: id="stereo-ping-pong"; bin="python3" -->
 
 ![Echoes alternating between the ears](img/stereo-ping-pong.png)
+
+## Looking at a stereo signal
+
+`plot` takes a `StereoExpr` like any other signal and draws two lines, named
+`left` and `right`. With `stacked=True` each side gets its own panel, as in the
+graphs above. Give it a label and the sides become `"<label> (left)"` and
+`"<label> (right)"`. In a list, a stereo signal counts as one signal for
+`labels` but draws two lines.
+
+`spectrogram` shows one channel at a time, because a spectrogram is a single
+picture. `channel` is `"left"`, `"right"`, or `"mix"` (the default), the average
+of the two. It applies only to a stereo signal.
+
+```python
+from daw.stereo import StereoExpr
+from daw.waves.basic import sine
+from daw.waves.utils import spectrogram
+
+pair = StereoExpr(sine(440), sine(1320))
+spectrogram(pair, duration=1.0, channel="right", max_frequency=2000,
+            title="The right channel of a pair: 1320 Hz only",
+            output_file="img/stereo-spectrogram.png")
+```
+<!-- md-code: id="stereo-spectrogram"; bin="python3" -->
+
+![The spectrogram of the right channel](img/stereo-spectrogram.png)
 
 ## An example to run
 
@@ -271,7 +294,6 @@ python examples/stereo_pan.py
 
 ## The limits
 
-- `plot`, `spectrogram`, `visualize` and `keyboard` do not take a `StereoExpr` yet.
-  Plot the two sides as a list, as above.
+- `visualize` and `keyboard` do not take a `StereoExpr` yet.
 - A `StereoExpr` is a pair, not an expression: it cannot be added to a mono signal
   or multiplied. Apply the arithmetic to each side, or use `map`.

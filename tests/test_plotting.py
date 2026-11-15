@@ -12,6 +12,7 @@ import pytest
 import sympy as sp
 
 from daw.filters import low_pass_filter
+from daw.stereo import StereoExpr, pan
 from daw.waves.basic import sawtooth, sine, square, trigger
 from daw.waves.time import BPM, TIME
 from daw.waves.utils import compile, linspace, plot, spectrogram
@@ -370,3 +371,202 @@ class TestSpectrogram:
     def test_a_constant_signal_does_not_crash(self, shown):
         # silence has no peak to normalise against
         spectrogram(sine(440) * 0, duration=0.5, sample_rate=self.SR)
+
+
+class TestPlotStereo:
+    PAIR = StereoExpr(sine(5), 0.5 * square(3))
+
+    def test_a_stereo_signal_is_two_lines_in_one_panel(self, shown):
+        plot(self.PAIR, 1.0, sample_rate=SR)
+        (ax,) = plt.gcf().axes
+        assert len(ax.lines) == 2
+
+    def test_the_lines_are_the_left_and_the_right_samples(self, shown):
+        plot(self.PAIR, 1.0, sample_rate=SR)
+        left, right = plt.gcf().axes[0].lines
+        np.testing.assert_allclose(
+            left.get_ydata(), compile(self.PAIR.left, 1.0, SR), atol=1e-12
+        )
+        np.testing.assert_allclose(
+            right.get_ydata(), compile(self.PAIR.right, 1.0, SR), atol=1e-12
+        )
+
+    def test_both_lines_share_the_time_axis(self, shown):
+        plot(self.PAIR, 1.0, sample_rate=SR)
+        left, right = plt.gcf().axes[0].lines
+        np.testing.assert_array_equal(left.get_xdata(), right.get_xdata())
+        np.testing.assert_allclose(left.get_xdata(), linspace(1.0, SR))
+
+    def test_an_unlabelled_stereo_signal_is_named_left_and_right(self, shown):
+        plot(self.PAIR, 1.0, sample_rate=SR)
+        texts = [t.get_text() for t in plt.gcf().axes[0].get_legend().get_texts()]
+        assert texts == ["left", "right"]
+
+    def test_a_label_names_both_sides(self, shown):
+        plot(self.PAIR, 1.0, sample_rate=SR, labels=["pair"])
+        texts = [t.get_text() for t in plt.gcf().axes[0].get_legend().get_texts()]
+        assert texts == ["pair (left)", "pair (right)"]
+
+    def test_a_list_can_mix_mono_and_stereo_with_one_label_per_signal(self, shown):
+        plot([sine(5), self.PAIR], 1.0, sample_rate=SR, labels=["mono", "pair"])
+        ax = plt.gcf().axes[0]
+        assert len(ax.lines) == 3
+        texts = [t.get_text() for t in ax.get_legend().get_texts()]
+        assert texts == ["mono", "pair (left)", "pair (right)"]
+
+    def test_a_label_for_each_side_is_too_many(self, shown):
+        with pytest.raises(ValueError, match="one name per signal"):
+            plot(self.PAIR, 1.0, sample_rate=SR, labels=["l", "r"])
+
+    def test_a_mono_signal_next_to_a_stereo_one_stays_unlabelled_by_default(
+        self, shown
+    ):
+        plot([sine(5), self.PAIR], 1.0, sample_rate=SR)
+        texts = [t.get_text() for t in plt.gcf().axes[0].get_legend().get_texts()]
+        assert texts == ["left", "right"]
+
+    def test_mono_plots_have_no_legend_without_labels(self, shown):
+        plot(sine(5), 1.0, sample_rate=SR)
+        assert plt.gcf().axes[0].get_legend() is None
+
+    def test_stacked_gives_each_side_its_own_panel(self, shown):
+        plot(self.PAIR, 1.0, sample_rate=SR, stacked=True)
+        axes = plt.gcf().axes
+        assert len(axes) == 2
+        np.testing.assert_allclose(
+            axes[0].lines[0].get_ydata(), compile(self.PAIR.left, 1.0, SR), atol=1e-12
+        )
+        np.testing.assert_allclose(
+            axes[1].lines[0].get_ydata(), compile(self.PAIR.right, 1.0, SR), atol=1e-12
+        )
+
+    def test_stacked_panels_are_titled_left_and_right(self, shown):
+        plot(self.PAIR, 1.0, sample_rate=SR, stacked=True)
+        axes = plt.gcf().axes
+        assert axes[0].get_title(loc="left") == "left"
+        assert axes[1].get_title(loc="left") == "right"
+
+    def test_stacked_panels_use_the_label(self, shown):
+        plot(self.PAIR, 1.0, sample_rate=SR, stacked=True, labels=["pair"])
+        axes = plt.gcf().axes
+        assert axes[0].get_title(loc="left") == "pair (left)"
+        assert axes[1].get_title(loc="left") == "pair (right)"
+
+    def test_stacked_mixed_list_has_a_panel_per_line(self, shown):
+        plot([sine(5), self.PAIR], 1.0, sample_rate=SR, stacked=True)
+        assert len(plt.gcf().axes) == 3
+
+    def test_start_shows_the_same_window_of_both_sides(self, shown):
+        plot(self.PAIR, 0.5, sample_rate=SR, start=0.25)
+        left, right = plt.gcf().axes[0].lines
+        np.testing.assert_allclose(
+            left.get_ydata(), compile(self.PAIR.left, 0.75, SR)[250:], atol=1e-12
+        )
+        np.testing.assert_allclose(
+            right.get_ydata(), compile(self.PAIR.right, 0.75, SR)[250:], atol=1e-12
+        )
+
+    def test_it_works_in_beats(self, shown):
+        plot(self.PAIR, 2.0, BPM(120), sample_rate=SR)
+        ax = plt.gcf().axes[0]
+        assert ax.get_xlabel() == "Beat [b]"
+        assert len(ax.lines) == 2
+        assert ax.lines[0].get_xdata()[-1] == pytest.approx(2.0, abs=0.01)
+
+    def test_a_panned_signal_is_louder_on_the_side_it_is_panned_to(self, shown):
+        plot(pan(sine(5), -0.5), 1.0, sample_rate=SR)
+        left, right = plt.gcf().axes[0].lines
+        assert np.abs(left.get_ydata()).max() > 2 * np.abs(right.get_ydata()).max()
+
+    def test_a_constant_side_is_drawn_flat(self, shown):
+        plot(StereoExpr(sine(5), 0.25), 0.1, sample_rate=SR)
+        _, right = plt.gcf().axes[0].lines
+        np.testing.assert_allclose(right.get_ydata(), 0.25)
+        assert len(right.get_ydata()) == 100
+
+    def test_it_can_be_saved(self, shown, tmp_path):
+        out = tmp_path / "pair.png"
+        plot(self.PAIR, 1.0, sample_rate=SR, output_file=out)
+        assert out.read_bytes().startswith(PNG_MAGIC)
+        assert shown == []
+
+
+class TestSpectrogramStereo:
+    SR = 8000
+    PAIR = StereoExpr(sine(500), sine(2000))
+
+    def peak(self, **options):
+        spectrogram(self.PAIR, duration=1.0, sample_rate=self.SR, **options)
+        fig = plt.gcf()
+        columns = fig.axes[0].images[0].get_array().shape[1]
+        return image_peak_frequency(fig, columns // 2)
+
+    def test_the_left_channel_shows_the_left_tone(self, shown):
+        assert self.peak(channel="left") == pytest.approx(500, abs=15)
+
+    def test_the_right_channel_shows_the_right_tone(self, shown):
+        assert self.peak(channel="right") == pytest.approx(2000, abs=30)
+
+    def test_the_mix_shows_both_tones(self, shown):
+        spectrogram(self.PAIR, duration=1.0, sample_rate=self.SR)
+        data = plt.gcf().axes[0].images[0].get_array()
+        column = data[:, data.shape[1] // 2]
+        top = np.sort(np.argsort(column)[-6:])
+        _, _, bottom, high = plt.gcf().axes[0].images[0].get_extent()
+        freqs = bottom + (top + 0.5) * (high - bottom) / data.shape[0]
+        assert np.any(np.abs(freqs - 500) < 30)
+        assert np.any(np.abs(freqs - 2000) < 30)
+
+    def test_mix_is_the_default(self, shown):
+        spectrogram(self.PAIR, duration=1.0, sample_rate=self.SR)
+        default = plt.gcf().axes[0].images[0].get_array().copy()
+        plt.close("all")
+        spectrogram(self.PAIR, duration=1.0, sample_rate=self.SR, channel="mix")
+        np.testing.assert_array_equal(default, plt.gcf().axes[0].images[0].get_array())
+
+    def test_a_channel_matches_a_mono_signal_of_that_side(self, shown):
+        spectrogram(self.PAIR, 1.0, self.SR, channel="right")
+        stereo_image = plt.gcf().axes[0].images[0].get_array().copy()
+        plt.close("all")
+        spectrogram(self.PAIR.right, 1.0, self.SR)
+        np.testing.assert_array_equal(
+            stereo_image, plt.gcf().axes[0].images[0].get_array()
+        )
+
+    def test_the_mix_of_identical_sides_is_that_side(self, shown):
+        spectrogram(StereoExpr(sine(500), sine(500)), 1.0, self.SR)
+        stereo_image = plt.gcf().axes[0].images[0].get_array().copy()
+        plt.close("all")
+        spectrogram(sine(500), 1.0, self.SR)
+        np.testing.assert_allclose(
+            stereo_image, plt.gcf().axes[0].images[0].get_array(), atol=1e-9
+        )
+
+    def test_start_applies_to_the_chosen_channel(self, shown):
+        spectrogram(self.PAIR, 0.5, self.SR, start=0.25, channel="left")
+        left, _, _, _ = plt.gcf().axes[0].images[0].get_extent()
+        assert left == pytest.approx(0.25)
+
+    def test_an_unknown_channel_is_rejected(self, shown):
+        with pytest.raises(ValueError, match="'left', 'right' or 'mix'"):
+            spectrogram(self.PAIR, 1.0, self.SR, channel="middle")
+
+    def test_a_channel_does_not_apply_to_a_mono_signal(self, shown):
+        with pytest.raises(ValueError, match="only applies to a stereo"):
+            spectrogram(sine(500), 1.0, self.SR, channel="left")
+
+    def test_mono_signals_still_work_with_the_default_channel(self, shown):
+        spectrogram(sine(500), 1.0, self.SR, channel="mix")
+        assert plt.get_fignums() == [1]
+
+    def test_a_short_stereo_window_is_rejected(self, shown):
+        with pytest.raises(ValueError, match="too short"):
+            spectrogram(self.PAIR, duration=0.01, sample_rate=self.SR)
+
+    def test_silent_stereo_does_not_crash(self, shown):
+        spectrogram(StereoExpr(0, 0), 0.5, self.SR)
+
+    def test_writes_a_png(self, shown, tmp_path):
+        out = tmp_path / "pair.png"
+        spectrogram(self.PAIR, 0.5, self.SR, channel="left", output_file=out)
+        assert out.read_bytes().startswith(PNG_MAGIC)

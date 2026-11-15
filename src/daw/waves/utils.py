@@ -91,12 +91,13 @@ def save(
 
 
 def _window(
-    wave_function: Expr,
+    wave_function: Expr | StereoExpr,
     start: float,
     duration: float,
     sample_rate: int,
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    """Times and samples of [start, start + duration).
+    """Times and samples of [start, start + duration): one column for each
+    side when the signal is a `StereoExpr`.
 
     The signal is compiled from time zero and then cut, so anything with a
     state (like a filter) is where it would really be at `start`."""
@@ -118,7 +119,7 @@ def _finish(fig: Figure, output_file: str | os.PathLike[str] | None) -> None:
 
 
 def plot(
-    wave_function: Expr | list[Expr],
+    wave_function: Expr | StereoExpr | list[Expr | StereoExpr],
     duration: float = 1.0,
     bpm: BPM | None = None,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
@@ -134,10 +135,14 @@ def plot(
     Duration is either interpreted as time in seconds or beats depending on
     whether bpm is provided or not, and so is start, the time the plot
     begins at (the signal is still computed from time zero).
+    A `StereoExpr` is drawn as two lines, its left and its right, named "left"
+    and "right" (or "<label> (left)" and "<label> (right)" when it has a label;
+    labels still take one name per signal, not per side).
     With labels, every signal is named: in a legend, or as a title above
     its own panel when stacked is true. Stacked draws one panel per
-    signal, sharing the time axis. With output_file the figure is written
-    to that file (an image format, e.g. png) instead of being shown."""
+    signal, or per side of a stereo signal, sharing the time axis. With
+    output_file the figure is written to that file (an image format, e.g.
+    png) instead of being shown."""
     waves = wave_function if isinstance(wave_function, list) else [wave_function]
     if not waves:
         raise ValueError('plot needs at least one signal')
@@ -146,24 +151,35 @@ def plot(
     if start < 0:
         raise ValueError('start must not be negative')
 
+    # Every line to draw, and its name: a stereo signal is two of them
+    lines: list[tuple[Expr, str | None]] = []
+    for index, wave in enumerate(waves):
+        name = labels[index] if labels is not None else None
+        if isinstance(wave, StereoExpr):
+            for side, expression in (('left', wave.left), ('right', wave.right)):
+                lines.append(
+                    (expression, side if name is None else f'{name} ({side})')
+                )
+        else:
+            lines.append((wave, name))
+
     def seconds(amount: float) -> float:
         return amount if bpm is None else bpm.time(amount)
 
     if stacked:
         fig, axes = plt.subplots(
-            len(waves), 1, sharex=True, squeeze=False,
-            figsize=(10, 1.6 * len(waves) + 1),
+            len(lines), 1, sharex=True, squeeze=False,
+            figsize=(10, 1.6 * len(lines) + 1),
         )
         panels = list(axes[:, 0])
     else:
         fig = plt.figure(figsize=(10, 4))
-        panels = [fig.gca()] * len(waves)
-    for index, (wave, ax) in enumerate(zip(waves, panels, strict=True)):
+        panels = [fig.gca()] * len(lines)
+    for (wave, name), ax in zip(lines, panels, strict=True):
         times, samples = _window(
             wave, seconds(start), seconds(duration), sample_rate
         )
         x_axis = times if bpm is None else np.vectorize(bpm.beat)(times)
-        name = labels[index] if labels is not None else None
         ax.plot(x_axis, samples, label=name)
         ax.grid(True)
         if stacked:
@@ -175,7 +191,7 @@ def plot(
     panels[0].set_title(title)
     if not stacked:
         last.set_ylabel('Amplitude')
-        if labels is not None:
+        if any(name is not None for _, name in lines):
             last.legend()
     _finish(fig, output_file)
 
@@ -185,12 +201,13 @@ SPECTROGRAM_RANGE_DB = 90
 
 
 def spectrogram(
-    wave_function: Expr,
+    wave_function: Expr | StereoExpr,
     duration: float = 1.0,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
     *,
     start: float = 0.0,
     max_frequency: float | None = None,
+    channel: str = 'mix',
     title: str = 'Spectrogram',
     output_file: str | os.PathLike[str] | None = None,
 ) -> None:
@@ -198,13 +215,25 @@ def spectrogram(
     across, frequency up, loudness as colour (a 90 dB range ending at the
     loudest point). Time is in seconds. Start and duration pick a window,
     though the signal is still computed from time zero. max_frequency limits
-    the vertical axis (default: half the sample rate). With output_file the
-    figure is written to that file instead of being shown."""
+    the vertical axis (default: half the sample rate). A `StereoExpr` is shown
+    one channel at a time: channel is 'left', 'right' or 'mix' (the default, the
+    average of the two). It does not apply to a mono signal. With output_file
+    the figure is written to that file instead of being shown."""
     if duration <= 0:
         raise ValueError('duration must be positive')
     if start < 0:
         raise ValueError('start must not be negative')
+    if channel not in ('left', 'right', 'mix'):
+        raise ValueError("channel must be 'left', 'right' or 'mix'")
+    if not isinstance(wave_function, StereoExpr) and channel != 'mix':
+        raise ValueError('channel only applies to a stereo signal')
     _, samples = _window(wave_function, start, duration, sample_rate)
+    if samples.ndim == 2:
+        samples = {
+            'left': samples[:, 0],
+            'right': samples[:, 1],
+            'mix': samples.mean(axis=1),
+        }[channel]
     if len(samples) < SPECTROGRAM_WINDOW:
         raise ValueError(
             f'window too short to analyse: need at least {SPECTROGRAM_WINDOW} '

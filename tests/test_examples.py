@@ -741,7 +741,7 @@ def plays(tmp_path_factory):
 
 @pytest.fixture
 def played(plays):
-    return {name: data for name, (data, _) in zip(NAMES, plays)}
+    return {name: data for name, (data, _) in zip(NAMES, plays, strict=True)}
 
 
 class TestEchoMelody:
@@ -834,7 +834,8 @@ class TestEchoMelody:
             np.sqrt((room[i : i + step] ** 2).mean())
             for i in range(int(1.5 * self.SR), int(3.5 * self.SR), step)
         ]
-        assert all(later < earlier for earlier, later in zip(loud, loud[1:]))
+        pairs = zip(loud, loud[1:], strict=False)
+        assert all(later < earlier for earlier, later in pairs)
 
     def test_nothing_clips_or_goes_missing(self, played):
         for name, samples in played.items():
@@ -1015,7 +1016,9 @@ class TestStereoPan:
             np.abs(self.window(played, k * 0.375, k * 0.375 + 0.1)[:, k % 2]).max()
             for k in range(1, 5)
         ]
-        assert all(later < earlier for earlier, later in zip(peaks, peaks[1:], strict=False))
+        assert all(
+            later < earlier for earlier, later in zip(peaks, peaks[1:], strict=False)
+        )
 
     # sweep
 

@@ -40,7 +40,7 @@ Output:
 | `play(expr, duration=1.0, sample_rate=44100)` | Plays through the speakers and waits until it finishes |
 | `save(expr, duration, output_file, sample_rate=44100)` | Writes a WAV file |
 | `plot(expr_or_list, duration=1.0, bpm=None, ...)` | Draws the waveform |
-| `spectrogram(expr, duration=1.0, ...)` | Draws how the frequencies change over time |
+| `spectrogram(expr, duration=1.0, ...)` | Draws how the frequencies change over time (`channel=` picks a side of a stereo signal) |
 
 `duration` is in seconds. `play` needs a working audio device; the others do
 not. Press Ctrl-C to stop `play` early.
