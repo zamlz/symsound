@@ -30,6 +30,9 @@ NOT_PLAYED = {"classic_synths", "keyboard_synth"}
 # These open a window that stays until a person closes it, so running one as a
 # script would never finish: they are run with the window loop replaced below
 INTERACTIVE = {"keyboard_synth"}
+# These have a golden file of everything they play, checked by their own test
+# class, so the generic check of just the first thing played does not apply
+OWN_GOLDEN = {"echo_melody"}
 
 
 class Typist:
@@ -254,7 +257,9 @@ class TestHouseFilterSweep:
             assert wet_step <= dry_step * 1.5 + 0.01
 
 
-@pytest.mark.parametrize("name", [n for n in SCRIPTS if n not in NOT_PLAYED])
+@pytest.mark.parametrize(
+    "name", [n for n in SCRIPTS if n not in NOT_PLAYED | OWN_GOLDEN]
+)
 def test_example_sound_has_not_changed(name, fake_sounddevice, tmp_path, monkeypatch):
     run_example(name, fake_sounddevice, tmp_path, monkeypatch)
     check_golden(name, fake_sounddevice.plays[0][0])
@@ -735,7 +740,7 @@ def plays(tmp_path_factory):
 
 @pytest.fixture
 def played(plays):
-    return {name: data for name, (data, _) in zip(NAMES, plays)}
+    return {name: data for name, (data, _) in zip(NAMES, plays, strict=True)}
 
 
 class TestEchoMelody:
@@ -828,7 +833,8 @@ class TestEchoMelody:
             np.sqrt((room[i : i + step] ** 2).mean())
             for i in range(int(1.5 * self.SR), int(3.5 * self.SR), step)
         ]
-        assert all(later < earlier for earlier, later in zip(loud, loud[1:]))
+        pairs = zip(loud, loud[1:], strict=False)
+        assert all(later < earlier for earlier, later in pairs)
 
     def test_nothing_clips_or_goes_missing(self, played):
         for name, samples in played.items():
