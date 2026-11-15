@@ -78,6 +78,17 @@ class TestCodeBlocks:
                 f"`python no-run`:\n{code}"
             )
 
+    def test_every_python_block_in_the_readme_is_executed_or_marked_no_run(self):
+        # The README is built with the docs, so a block that is neither run by md
+        # nor marked `python no-run` would show code nobody ever checks
+        blocks = python_blocks(ROOT / "README.md")
+        assert blocks
+        for info, code, fields in blocks:
+            assert fields is not None or "no-run" in info, (
+                f"README.md: a python block is neither run by md nor marked "
+                f"`python no-run`:\n{code}"
+            )
+
     @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
     def test_executed_blocks_have_a_unique_id_and_run_python(self, page):
         ids = []
@@ -265,6 +276,60 @@ class TestBuildDocsTool:
         problems = "\n".join(tool.differences(tmp_path / "old", tmp_path / "new"))
         assert "img/a.png: not committed" in problems
         assert "img/b.png: referenced but no block draws it" in problems
+
+    def readme_tree(self, root, readme, page="p.md"):
+        (root / "docs" / "img").mkdir(parents=True)
+        (root / "docs" / page).write_text("![a](img/a.png)\n")
+        (root / "docs" / "img" / "a.png").write_bytes(b"1")
+        (root / "README.md").write_text(readme)
+        return root / "docs"
+
+    def test_the_readme_is_built_with_the_docs_from_the_repository_root(
+        self, tool, tmp_path
+    ):
+        docs = self.readme_tree(tmp_path, "# daw\n")
+        pages = tool.pages_of(docs)
+        assert [(page.name, folder) for page, folder in pages] == [
+            ("p.md", docs),
+            ("README.md", tmp_path),
+        ]
+
+    def test_there_is_no_readme_page_when_there_is_no_readme(self, tool, tmp_path):
+        docs = self.readme_tree(tmp_path, "x")
+        (tmp_path / "README.md").unlink()
+        assert [page.name for page, _ in tool.pages_of(docs)] == ["p.md"]
+
+    def test_images_the_readme_uses_count_as_used(self, tool, tmp_path):
+        docs = self.readme_tree(
+            tmp_path, "![t](docs/img/readme-tone.png) ![u](docs/img/u.png)\n"
+        )
+        assert tool.referenced_images(docs) == {
+            "img/a.png",
+            "img/readme-tone.png",
+            "img/u.png",
+        }
+
+    def test_a_readme_image_path_is_not_read_as_a_docs_image(self, tool, tmp_path):
+        docs = self.readme_tree(tmp_path, "![t](img/not-docs-relative.png)\n")
+        assert tool.referenced_images(docs) == {"img/a.png"}
+
+    def test_a_stale_readme_is_reported(self, tool, tmp_path):
+        old = self.readme_tree(tmp_path / "old", "old readme\n")
+        new = self.readme_tree(tmp_path / "new", "new readme\n")
+        problems = "\n".join(tool.differences(old, new))
+        assert "README.md: text is out of date" in problems
+
+    def test_an_up_to_date_readme_is_not_reported(self, tool, tmp_path):
+        old = self.readme_tree(tmp_path / "old", "same\n")
+        new = self.readme_tree(tmp_path / "new", "same\n")
+        assert tool.differences(old, new) == []
+
+    def test_a_readme_image_nobody_draws_is_reported(self, tool, tmp_path):
+        old = self.readme_tree(tmp_path / "old", "![t](docs/img/t.png)\n")
+        (old / "img" / "t.png").write_bytes(b"1")
+        new = self.readme_tree(tmp_path / "new", "![t](docs/img/t.png)\n")
+        problems = "\n".join(tool.differences(old, new))
+        assert "img/t.png: referenced but no block draws it" in problems
 
 
 @pytest.mark.slow

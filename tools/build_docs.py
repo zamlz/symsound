@@ -10,6 +10,9 @@ The documentation pages are markdown processed by `md` (github.com/zamlz/mdutils
   * the blocks also draw the graphs in docs/img/,
   * `<!-- md-toc: -->` markers get a table of contents.
 
+The README at the top of the repository goes through the same two steps. Its
+blocks run from the repository root, so it names its graphs `docs/img/...`.
+
 Usage:
   python tools/build_docs.py           rewrite docs/ in place
   python tools/build_docs.py --check   change nothing; fail if docs/ is stale
@@ -61,12 +64,28 @@ def excerpt(text, marker, lines=14):
     return "\n    ".join(after)
 
 
+def readme_of(docs):
+    """The README beside a docs folder, or None if there is not one"""
+    readme = docs.parent / "README.md"
+    return readme if readme.exists() else None
+
+
+def pages_of(docs):
+    """Every page that is built, with the folder its blocks run in: the pages
+    of `docs`, and the README one level up"""
+    pages = [(page, docs) for page in sorted(docs.glob("*.md"))]
+    readme = readme_of(docs)
+    if readme is not None:
+        pages.append((readme, readme.parent))
+    return pages
+
+
 def build(docs):
-    """Regenerate every page in `docs`. Returns the problems found."""
+    """Regenerate every page in `docs`, and the README. Returns the problems found."""
     problems = []
-    for page in sorted(docs.glob("*.md")):
+    for page, folder in pages_of(docs):
         text = page.read_text()
-        built = run_md("toc", run_md("code", text, docs), docs)
+        built = run_md("toc", run_md("code", text, folder), folder)
         for marker in FAILURE_MARKERS:
             if marker in built:
                 problems.append(
@@ -77,14 +96,17 @@ def build(docs):
 
 
 def referenced_images(docs):
+    """The images the pages use, as paths inside `docs` (img/name.png). The
+    README, which sits above `docs`, writes them as docs/img/name.png."""
     names = set()
-    for page in docs.glob("*.md"):
+    for page, _ in pages_of(docs):
+        prefix = "](img/" if page.parent == docs else "](docs/img/"
         for line in page.read_text().splitlines():
-            start = line.find("](img/")
+            start = line.find(prefix)
             while start != -1:
                 end = line.index(")", start)
-                names.add(line[start + 2 : end])
-                start = line.find("](img/", end)
+                names.add("img/" + line[start + len(prefix) : end])
+                start = line.find(prefix, end)
     return names
 
 
@@ -93,6 +115,13 @@ def differences(committed, rebuilt):
     for page in sorted(committed.glob("*.md")):
         if page.read_text() != (rebuilt / page.name).read_text():
             problems.append(f"{page.name}: text is out of date")
+    old_readme, new_readme = readme_of(committed), readme_of(rebuilt)
+    if (
+        old_readme is not None
+        and new_readme is not None
+        and old_readme.read_text() != new_readme.read_text()
+    ):
+        problems.append("README.md: text is out of date")
     expected = referenced_images(rebuilt)
     for name in sorted(expected):
         old, new = committed / name, rebuilt / name
@@ -127,6 +156,7 @@ def main(argv):
             copy = Path(scratch)
             shutil.copytree(ROOT / "docs", copy / "docs")
             shutil.copytree(ROOT / "examples", copy / "examples")
+            shutil.copy2(ROOT / "README.md", copy / "README.md")
             problems = build(copy / "docs")
             problems += differences(ROOT / "docs", copy / "docs")
     for problem in problems:

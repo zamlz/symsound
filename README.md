@@ -21,10 +21,43 @@ save or plot it.
 
 ```python
 from daw.waves.basic import sine
+from daw.waves.utils import compile, plot
+
+tone = sine(440) * 0.5
+samples = compile(tone, duration=1.0)
+print(samples.shape, round(float(samples.max()), 3))
+plot(tone, duration=0.01, title="sine(440) * 0.5",
+     output_file="docs/img/readme-tone.png")
+```
+<!-- md-code: id="readme-tone"; bin="python3" -->
+
+Output:
+```
+(44100,) 0.5
+
+```
+<!-- md-code-output: id="readme-tone" -->
+
+![A 440 Hz sine at half volume](docs/img/readme-tone.png)
+
+To hear it, `play` it:
+
+```python no-run
+from daw.waves.basic import sine
 from daw.waves.utils import play
 
-play(sine(440), duration=2.0)
+play(sine(440) * 0.5, duration=2.0)
 ```
+
+<!-- md-toc: -->
+- [Why this exists](#why-this-exists)
+- [How it works](#how-it-works)
+- [Running the examples](#running-the-examples)
+- [Documentation](#documentation)
+- [Development](#development)
+- [Known limitations](#known-limitations)
+- [License](#license)
+<!-- md-toc: end -->
 
 ## Why this exists
 
@@ -47,38 +80,39 @@ Frequencies may themselves be expressions (e.g. `sine(440 + 5 * sine(6))`).
 The phase is obtained by integrating the frequency over `TIME`, so frequency
 modulation stays correct.
 
+## Running the examples
+
+```sh
+python examples/house.py
+python examples/house_with_low_pass.py
+python examples/ode_to_joy.py
+python examples/echo_pulse.py       # asks how many seconds between the echoes
+python examples/echo_melody.py      # three plucks: dry, with an echo, in a room
+python examples/keyboard_synth.py   # a playable instrument (needs the gui extra)
+```
+
+The dev shell puts `src/` on `PYTHONPATH`. Outside it, install the package with
+`pip install -e .` first.
+
+Playback needs [PortAudio](https://www.portaudio.com) via `sounddevice`.
+`sounddevice` is only imported when `play` is called, so compiling, saving and
+the test suite work on machines without an audio backend.
+
 ## Documentation
 
 See [docs/](docs/README.md) for how to use each piece, with graphs of the
 signals and a line-by-line walkthrough of `examples/house.py`. The code blocks
-in the docs are run by [mdutils](https://github.com/zamlz/mdutils) (`md`,
-provided by the dev shell), which also draws the graphs:
+in the docs, and the one above, are run by
+[mdutils](https://github.com/zamlz/mdutils) (`md`, provided by the dev shell),
+which also draws the graphs:
 
 ```sh
 nix develop -c python tools/build_docs.py          # regenerate output and graphs
 nix develop -c python tools/build_docs.py --check  # fail if they are stale
 ```
 
-## Layout
-
-| Path | Contents |
-| --- | --- |
-| `src/daw/constants.py` | `Note` frequency table, default sample rate |
-| `src/daw/waves/basic.py` | `sine`, `square`, `triangle`, `sawtooth`, `trigger` |
-| `src/daw/waves/time.py` | `TIME` symbol and the `BPM` helper |
-| `src/daw/waves/utils.py` | `compile`, `play`, `save`, `plot`, `WHITE_NOISE` |
-| `src/daw/envelope.py` | `adsr_envelope` and the `ACTIVE_DURATION` symbol |
-| `src/daw/filters.py` | First-order low-pass filter, applied on the sample grid |
-| `src/daw/effects.py` | `delay`: a signal, later (echo and reverb are sums of delays) |
-| `src/daw/keyboard.py` | `keyboard`: play a signal with your computer's keys, with a scope and a spectrogram |
-| `src/daw/visualizer.py` | `visualize`: a window that plays a signal and shows it (needs `pip install 'daw[gui]'`) |
-| `src/daw/analysis.py` | The numbers behind the spectrogram and the overview, with no GUI |
-| `src/daw/live.py` | Real-time engine: notes rendered in pieces, mixed and sent to the speakers |
-| `docs/` | How to use the library, with graphs; the code blocks are executed |
-| `examples/` | Example scripts (`house.py`, `house_with_low_pass.py`, ...) |
-| `tests/` | Pytest suite, golden files and guard tests |
-| `tools/` | `mutation_check.py` (proves the tests catch bugs), `build_docs.py` (runs the docs) |
-| `guidelines.md` | How we design, test, lint and commit, and the principles behind the library. Read before contributing |
+How the source code is organised is described in [guidelines.md](guidelines.md)
+(section 3, "Project layout").
 
 ## Development
 
@@ -114,24 +148,6 @@ the Actions tab (`mutation.yml`).
 
 Every change, new feature and fixed bug needs rigorous tests. The standard,
 per-feature checklists and conventions are in [guidelines.md](guidelines.md).
-
-## Running the examples
-
-```sh
-python examples/house.py
-python examples/house_with_low_pass.py
-python examples/ode_to_joy.py
-python examples/echo_pulse.py       # asks how many seconds between the echoes
-python examples/echo_melody.py      # three plucks: dry, with an echo, in a room
-python examples/keyboard_synth.py   # a playable instrument (needs the gui extra)
-```
-
-The dev shell puts `src/` on `PYTHONPATH`. Outside it, install the package with
-`pip install -e .` first.
-
-Playback needs [PortAudio](https://www.portaudio.com) via `sounddevice`.
-`sounddevice` is only imported when `play` is called, so compiling, saving and
-the test suite work on machines without an audio backend.
 
 ## Known limitations
 
