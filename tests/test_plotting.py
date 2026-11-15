@@ -11,8 +11,9 @@ import numpy as np
 import pytest
 import sympy as sp
 
+from daw.effects import pan
 from daw.filters import low_pass_filter
-from daw.stereo import StereoExpr, pan
+from daw.stereo import StereoExpr
 from daw.waves.basic import sawtooth, sine, square, trigger
 from daw.waves.time import BPM, TIME
 from daw.waves.utils import compile, linspace, plot, spectrogram

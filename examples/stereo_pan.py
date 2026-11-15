@@ -14,9 +14,9 @@ Each version plays in turn. Use headphones, or two speakers, to hear it.
 import numpy as np
 
 from daw.constants import Note
-from daw.effects import delay
+from daw.effects import delay, pan
 from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.stereo import StereoExpr, pan
+from daw.stereo import StereoExpr
 from daw.waves.basic import sine
 from daw.waves.utils import compile, play
 

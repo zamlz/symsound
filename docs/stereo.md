@@ -60,7 +60,7 @@ not have yet.
 ## Placing a sound: `pan`
 
 ```python
-from daw.stereo import pan
+from daw.effects import pan
 from daw.waves.basic import sine
 from daw.waves.utils import plot
 
@@ -164,7 +164,7 @@ turning the sound out of phase.
 import numpy as np
 import matplotlib.pyplot as plt
 
-from daw.stereo import pan
+from daw.effects import pan
 from daw.waves.basic import sine
 from daw.waves.utils import compile
 

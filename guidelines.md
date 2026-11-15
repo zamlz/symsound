@@ -93,7 +93,9 @@ src/daw/               the library
   constants.py         Note table, DEFAULT_SAMPLE_RATE
   envelope.py          adsr_envelope, ACTIVE_DURATION
   filters.py           low_pass_filter (first-order IIR on the sample grid)
-  effects.py           delay (echo and reverb are built from it, see docs/effects.md)
+  stereo.py            StereoExpr (a left and a right signal), mono_to_stereo
+  effects/timing.py    delay (echo and reverb are built from it, see docs/effects.md)
+  effects/spatial.py   pan: a mono signal placed between the ears (docs/stereo.md)
   analysis.py          spectrogram_columns, peak_envelope (pure NumPy, no GUI)
   visualizer.py        visualize, snapshot (pygame, optional: daw[gui])
   keyboard.py          keyboard, keyboard_snapshot (pygame, optional: daw[gui])
@@ -224,7 +226,7 @@ tests). Put them in the matching `tests/test_*.py` file.
       independence; error shrinks at the expected order when the rate doubles.
 - [ ] Invalid input (negative cutoff, a single time, an uneven grid) raises.
 
-### A time effect (`effects.py`)
+### A time effect (`effects/timing.py`)
 
 - [ ] Built as an expression of `TIME` out of `delay`, not as a function on
       samples (see section 15). The echo and reverb are docs recipes, not API.
