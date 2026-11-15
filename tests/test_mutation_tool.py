@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """The mutation tool's bookkeeping: which tests go with which source file, and
 which mutants a nightly run picks
 

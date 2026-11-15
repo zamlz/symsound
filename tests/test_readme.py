@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """The equation at the top of README.md is the dry beat of examples/house.py
 
 The LaTeX is written by hand, so this test turns that very text back into a

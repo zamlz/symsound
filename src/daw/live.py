@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """Real-time rendering of notes: the engine behind the live tools.
 
 `compile` turns a whole expression into samples at once. A keyboard cannot

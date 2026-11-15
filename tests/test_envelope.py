@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 import numpy as np
 import pytest
 import sympy as sp

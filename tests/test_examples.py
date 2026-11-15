@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """Run every example script end to end with audio stubbed out
 
 Examples are the closest thing this project has to acceptance tests: they

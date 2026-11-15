@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """Prove the tests notice bugs by deliberately introducing them
 
 Each mutant replaces one piece of source text with a plausible mistake and

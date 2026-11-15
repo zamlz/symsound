@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """Run the code blocks in docs/ and keep their output and graphs up to date
 
 The documentation pages are markdown processed by `md` (github.com/zamlz/mdutils):

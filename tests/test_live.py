@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """The live engine: notes rendered in pieces, mixed, and sent to the speakers
 
 The reference for every rendering test is `compile`, which builds the whole

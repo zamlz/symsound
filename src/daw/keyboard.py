@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """A keyboard you can play: the keys of your computer make the notes of a signal.
 
 `keyboard(f)` takes a function from a `Note` to a signal, such as
