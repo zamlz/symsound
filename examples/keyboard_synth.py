@@ -2,10 +2,10 @@
 
 import sympy as sp
 
-from daw.envelope import adsr_envelope
-from daw.keyboard import keyboard
-from daw.waves.basic import sine
-from daw.waves.time import TIME
+from symsound.envelope import adsr_envelope
+from symsound.keyboard import keyboard
+from symsound.waves.basic import sine
+from symsound.waves.time import TIME
 
 # A glassy electric piano you play on the computer keyboard (a s d f ... for the
 # white keys, w e t ... for the black ones, z and x for the octave).

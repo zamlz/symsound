@@ -11,7 +11,7 @@ import pkgutil
 import re
 from pathlib import Path
 
-import daw
+import symsound
 
 TESTS = Path(__file__).parent
 SOURCES = {
@@ -22,7 +22,7 @@ SOURCES = {
 def public_api():
     """(module, name) for every public function and class the package defines"""
     found = []
-    for info in pkgutil.walk_packages(daw.__path__, prefix="daw."):
+    for info in pkgutil.walk_packages(symsound.__path__, prefix="symsound."):
         module = importlib.import_module(info.name)
         for name, obj in vars(module).items():
             if name.startswith("_"):

@@ -3,9 +3,9 @@
 `visualize(expression, duration)` compiles the signal, plays it, and draws what
 is being heard. Space pauses, R replays, the arrow keys step through it, and
 you can click or drag on the seek bar. Everything it draws comes from
-`daw.analysis`; this module only turns those numbers into pixels.
+`symsound.analysis`; this module only turns those numbers into pixels.
 
-It needs pygame (`pip install 'daw[gui]'`), which the rest of the package does not.
+It needs pygame (`pip install 'symsound[gui]'`), which the rest of the package does not.
 """
 
 import os
@@ -16,7 +16,7 @@ from typing import Any
 import numpy as np
 from sympy.core.expr import Expr
 
-from daw._draw import (
+from symsound._draw import (
     BACKGROUND,
     BAR_HEIGHT,
     MARGIN,
@@ -34,10 +34,10 @@ from daw._draw import (
     _run,
     pygame,
 )
-from daw.analysis import HOP, peak_envelope, spectrogram_columns
-from daw.constants import DEFAULT_SAMPLE_RATE
-from daw.live import LiveOutput, Player
-from daw.waves.utils import compile
+from symsound.analysis import HOP, peak_envelope, spectrogram_columns
+from symsound.constants import DEFAULT_SAMPLE_RATE
+from symsound.live import LiveOutput, Player
+from symsound.waves.utils import compile
 
 SEEK_HEIGHT = 64
 SMALL_STEP = 1.0  # seconds jumped by an arrow key
@@ -104,7 +104,7 @@ class _Viewer:
     drawn onto an off-screen surface, which is how it is tested."""
 
     def __init__(
-        self, player: Player, title: str = "daw", *, drive_clock: bool = False
+        self, player: Player, title: str = "symsound", *, drive_clock: bool = False
     ):
         self.player = player
         self.title = title
@@ -236,7 +236,7 @@ def visualize(
     duration: float = 10.0,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
     *,
-    title: str = "daw",
+    title: str = "symsound",
     silent: bool = False,
     autoplay: bool = True,
     size: tuple[int, int] = WINDOW_SIZE,
@@ -269,7 +269,7 @@ def snapshot(
     output_file: str | os.PathLike[str],
     sample_rate: int = DEFAULT_SAMPLE_RATE,
     *,
-    title: str = "daw",
+    title: str = "symsound",
     playing: bool = False,
     size: tuple[int, int] = WINDOW_SIZE,
 ) -> None:

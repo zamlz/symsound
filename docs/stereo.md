@@ -13,7 +13,7 @@
 <!-- md-toc: end -->
 
 Until now a signal has been one expression, heard the same in both ears. A
-stereo signal is two of them: `StereoExpr(left, right)`, from `daw.stereo`. Each
+stereo signal is two of them: `StereoExpr(left, right)`, from `symsound.stereo`. Each
 side is an ordinary expression of `TIME`, so everything in the other pages
 (mixing, envelopes, filters, `delay`) works on a side, and nothing about mono
 changes. A bare expression is still mono.
@@ -21,9 +21,9 @@ changes. A bare expression is still mono.
 ## Two signals, one for each ear
 
 ```python
-from daw.stereo import StereoExpr
-from daw.waves.basic import sine
-from daw.waves.utils import compile, plot
+from symsound.stereo import StereoExpr
+from symsound.waves.basic import sine
+from symsound.waves.utils import compile, plot
 
 pair = StereoExpr(sine(440), sine(660))
 samples = compile(pair, duration=0.5)
@@ -63,9 +63,9 @@ not have yet.
 ```python
 import sympy as sp
 
-from daw.effects import pan
-from daw.waves.basic import sine
-from daw.waves.utils import plot
+from symsound.effects import pan
+from symsound.waves.basic import sine
+from symsound.waves.utils import plot
 
 left_ish = pan(sine(440), -sp.pi / 8)
 plot(left_ish, duration=0.01, stacked=True,
@@ -181,9 +181,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sympy as sp
 
-from daw.effects import pan
-from daw.waves.basic import sine
-from daw.waves.utils import compile
+from symsound.effects import pan
+from symsound.waves.basic import sine
+from symsound.waves.utils import compile
 
 # A constant 1 makes the two sides the gains themselves
 gains = compile(pan(1, sp.pi / 4 * sine(1)), duration=2.0)
@@ -234,9 +234,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sympy as sp
 
-from daw.effects import pan
-from daw.waves.time import TIME
-from daw.waves.utils import compile
+from symsound.effects import pan
+from symsound.waves.time import TIME
+from symsound.waves.utils import compile
 
 # One whole turn every two seconds, for four seconds
 gains = compile(pan(1, sp.pi * TIME), duration=4.0)
@@ -279,11 +279,11 @@ ears, keep the angle within `pi/4` of the centre.
 ```python
 import sympy as sp
 
-from daw.effects import delay
-from daw.stereo import StereoExpr
-from daw.waves.basic import sine
-from daw.waves.time import TIME
-from daw.waves.utils import plot
+from symsound.effects import delay
+from symsound.stereo import StereoExpr
+from symsound.waves.basic import sine
+from symsound.waves.time import TIME
+from symsound.waves.utils import plot
 
 beep = sine(500) * sp.Piecewise((1, (TIME >= 0) & (TIME < 0.05)), (0, True))
 dry = StereoExpr(beep, 0)
@@ -304,11 +304,11 @@ ears:
 ```python
 import sympy as sp
 
-from daw.effects import delay
-from daw.stereo import StereoExpr
-from daw.waves.basic import sine
-from daw.waves.time import TIME
-from daw.waves.utils import plot
+from symsound.effects import delay
+from symsound.stereo import StereoExpr
+from symsound.waves.basic import sine
+from symsound.waves.time import TIME
+from symsound.waves.utils import plot
 
 beep = sine(500) * sp.Piecewise((1, (TIME >= 0) & (TIME < 0.05)), (0, True))
 left = beep + 0.25 * delay(beep, 0.4)
@@ -335,9 +335,9 @@ picture. `channel` is `"left"`, `"right"`, or `"mix"` (the default), the average
 of the two. It applies only to a stereo signal.
 
 ```python
-from daw.stereo import StereoExpr
-from daw.waves.basic import sine
-from daw.waves.utils import spectrogram
+from symsound.stereo import StereoExpr
+from symsound.waves.basic import sine
+from symsound.waves.utils import spectrogram
 
 pair = StereoExpr(sine(440), sine(1320))
 spectrogram(pair, duration=1.0, channel="right", max_frequency=2000,

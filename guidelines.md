@@ -1,6 +1,6 @@
 # Guidelines
 
-How we design, build and test `daw`. Everything here is a working agreement: follow it
+How we design, build and test `symsound`. Everything here is a working agreement: follow it
 for every change, human or AI. The goal is simple: **a change that alters the
 sound, the API or the numbers must fail a test, and a change that does not must
 leave every test green.** We never want to find out by ear that something
@@ -36,7 +36,7 @@ A change is done only when **all** of these hold:
       test.
 - [ ] Every bug fixed has a regression test that fails without the fix. Prove
       it: revert the fix, watch the test fail, restore the fix.
-- [ ] Line **and** branch coverage of `src/daw` is still 100%.
+- [ ] Line **and** branch coverage of `src/symsound` is still 100%.
 - [ ] New examples are added to `tests/test_examples.py` and have a golden
       file ([section 8](#8-golden-files)).
 - [ ] The README and this document are updated if behavior, commands or
@@ -70,7 +70,7 @@ dependencies, ruff and `PYTHONPATH=src`.
 | Tests without coverage output       | `nix develop -c pytest --no-cov`                                                       |
 | Lint                                | `nix develop -c ruff check .`                                                          |
 | Format                              | `nix develop -c ruff format tests` (see [section 11](#11-code-style-and-dependencies)) |
-| Types                               | `nix develop -c mypy src/daw`                                                          |
+| Types                               | `nix develop -c mypy src/symsound`                                                          |
 | Regenerate golden files             | `UPDATE_GOLDEN=1 nix develop -c pytest tests/test_examples.py`                         |
 | Mutation check                      | `nix develop -c python tools/mutation_check.py`                                        |
 
@@ -89,7 +89,7 @@ Notes:
 ## 3. Project layout
 
 ```
-src/daw/               the library
+src/symsound/               the library
   constants.py         Note table, DEFAULT_SAMPLE_RATE
   envelope.py          adsr_envelope, ACTIVE_DURATION
   filters.py           low_pass_filter (first-order IIR on the sample grid)
@@ -97,8 +97,8 @@ src/daw/               the library
   effects/timing.py    delay (echo and reverb are built from it, see docs/effects.md)
   effects/spatial.py   pan: a mono signal placed between the ears (docs/stereo.md)
   analysis.py          spectrogram_columns, peak_envelope (pure NumPy, no GUI)
-  visualizer.py        visualize, snapshot (pygame, optional: daw[gui])
-  keyboard.py          keyboard, keyboard_snapshot (pygame, optional: daw[gui])
+  visualizer.py        visualize, snapshot (pygame, optional: symsound[gui])
+  keyboard.py          keyboard, keyboard_snapshot (pygame, optional: symsound[gui])
   _draw.py             private drawing shared by the two windows
   live.py              real-time engine: NoteSource, Mixer, Instrument, RingBuffer, LiveOutput
   waves/basic.py       sine, square, triangle, sawtooth, sawtooth_v2, trigger
@@ -117,7 +117,7 @@ tests/
 tools/mutation_check.py  deliberately breaks the code to prove tests notice
 ```
 
-Signals are SymPy expressions of one shared symbol, `daw.waves.time.TIME`.
+Signals are SymPy expressions of one shared symbol, `symsound.waves.time.TIME`.
 They only become samples in `compile()`. Keep that separation: construction is
 symbolic, evaluation is numeric.
 
@@ -349,13 +349,13 @@ plays. It is small, yet any audible change shifts it.
 
 `tests/test_policy.py` fails when:
 
-- a public function or class in `src/daw` is not referenced by any test;
+- a public function or class in `src/symsound` is not referenced by any test;
 - an example script has no tests or an audible example has no golden file;
 - an `xfail` is not `strict=True`;
 - a test is skipped unconditionally.
 
 Coverage: `pyproject.toml` sets `fail_under = 100` for line and branch
-coverage of `daw`. If a new branch is uncovered, add a test for it. Do not
+coverage of `symsound`. If a new branch is uncovered, add a test for it. Do not
 lower the threshold, and do not add `# pragma: no cover` without a comment
 explaining why that line cannot be tested.
 
@@ -400,7 +400,7 @@ nix develop -c python tools/mutation_check.py
   file is not formatted. `src/` has not been reformatted yet (the mutants in
   `tools/mutation_check.py` match its exact text).
   Do not mix a reformat of `src/` into a functional change.
-- **mypy** checks `src/daw`. New code in `src/daw` is typed.
+- **mypy** checks `src/symsound`. New code in `src/symsound` is typed.
 - Match the surrounding code: naming, comments, and idiom.
 - Example scripts may have unused imports (`examples/*.py` is exempt from
   `F401`/`E402`). The library may not.
@@ -455,8 +455,8 @@ of our flake, available in the dev shell). A python block followed by an
 
 ~~~markdown
 ```python
-from daw.waves.basic import sine
-from daw.waves.utils import plot
+from symsound.waves.basic import sine
+from symsound.waves.utils import plot
 
 plot(sine(3), duration=1.0, output_file="img/my-page-sine.png")
 ```

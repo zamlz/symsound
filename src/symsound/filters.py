@@ -4,7 +4,7 @@ import sympy as sp
 from scipy import signal as scipy_signal
 from sympy.core.expr import Expr
 
-from daw.waves.time import TIME
+from symsound.waves.time import TIME
 
 
 def apply_low_pass(

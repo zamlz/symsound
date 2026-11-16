@@ -13,9 +13,9 @@ from matplotlib.figure import Figure
 from scipy import signal as scipy_signal
 from sympy.core.expr import Expr
 
-from daw.constants import DEFAULT_SAMPLE_RATE
-from daw.stereo import StereoExpr
-from daw.waves.time import BPM, TIME
+from symsound.constants import DEFAULT_SAMPLE_RATE
+from symsound.stereo import StereoExpr
+from symsound.waves.time import BPM, TIME
 
 WHITE_NOISE = sp.symbols('white_noise', real=True)
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from daw.waves.basic import sawtooth, sine, square
-from daw.waves.time import BPM, TIME
-from daw.waves.utils import WHITE_NOISE, compile, play, plot, save
+from symsound.waves.basic import sawtooth, sine, square
+from symsound.waves.time import BPM, TIME
+from symsound.waves.utils import WHITE_NOISE, compile, play, plot, save
 
 bpm = BPM(140)
 

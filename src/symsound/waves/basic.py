@@ -2,8 +2,8 @@
 import sympy as sp
 from sympy.core.expr import Expr
 
-from daw.constants import Note
-from daw.waves.time import TIME
+from symsound.constants import Note
+from symsound.waves.time import TIME
 
 
 def sine(

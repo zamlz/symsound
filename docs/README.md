@@ -1,4 +1,4 @@
-# daw documentation
+# SymSound documentation
 
 These pages explain how to use the pieces of the library, not how they are
 implemented. Read them in order the first time, then use them as reference.

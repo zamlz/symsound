@@ -16,10 +16,10 @@ First, the imports and the tempo.
 ```python
 import sympy as sp
 
-from daw.filters import low_pass_filter
-from daw.waves.basic import sawtooth, sine, square
-from daw.waves.time import BPM, TIME
-from daw.waves.utils import WHITE_NOISE, compile, play, plot, save
+from symsound.filters import low_pass_filter
+from symsound.waves.basic import sawtooth, sine, square
+from symsound.waves.time import BPM, TIME
+from symsound.waves.utils import WHITE_NOISE, compile, play, plot, save
 
 bpm = BPM(140)
 ```
@@ -60,7 +60,7 @@ horizontal axis is in beats:
 ```python
 import runpy
 
-from daw.waves.utils import plot
+from symsound.waves.utils import plot
 
 ns = runpy.run_path("../examples/house_with_low_pass.py")   # builds the signals, does not play
 plot(
@@ -106,7 +106,7 @@ offset:
 ```python
 import runpy
 
-from daw.waves.utils import plot
+from symsound.waves.utils import plot
 
 ns = runpy.run_path("../examples/house_with_low_pass.py")
 plot(
@@ -131,7 +131,7 @@ import runpy
 
 import numpy as np
 
-from daw.waves.utils import plot
+from symsound.waves.utils import plot
 
 ns = runpy.run_path("../examples/house_with_low_pass.py")
 np.random.seed(0)    # the hat is noise: seed it so this graph is the same every run
@@ -183,7 +183,7 @@ Multiplying the buzz by `stutter` gates it on and off at that varying rate.
 ```python
 import runpy
 
-from daw.waves.utils import plot
+from symsound.waves.utils import plot
 
 ns = runpy.run_path("../examples/house_with_low_pass.py")
 plot(
@@ -223,7 +223,7 @@ import runpy
 
 import numpy as np
 
-from daw.waves.utils import plot
+from symsound.waves.utils import plot
 
 ns = runpy.run_path("../examples/house_with_low_pass.py")
 np.random.seed(0)    # the hat is noise: seed it so this graph is the same every run
@@ -277,7 +277,7 @@ curve described here. The other two panels are built from it and explained next.
 ```python
 import runpy
 
-from daw.waves.utils import plot
+from symsound.waves.utils import plot
 
 ns = runpy.run_path("../examples/house_with_low_pass.py")
 plot(
@@ -364,7 +364,7 @@ import runpy
 
 import numpy as np
 
-from daw.waves.utils import spectrogram
+from symsound.waves.utils import spectrogram
 
 ns = runpy.run_path("../examples/house_with_low_pass.py")
 np.random.seed(0)    # the hat is noise: seed it so this graph is the same every run
@@ -389,7 +389,7 @@ import runpy
 
 import numpy as np
 
-from daw.waves.utils import plot
+from symsound.waves.utils import plot
 
 ns = runpy.run_path("../examples/house_with_low_pass.py")
 np.random.seed(0)    # the hat is noise: seed it so this graph is the same every run

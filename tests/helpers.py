@@ -3,8 +3,8 @@
 import numpy as np
 import sympy as sp
 
-from daw.waves.time import TIME
-from daw.waves.utils import WHITE_NOISE
+from symsound.waves.time import TIME
+from symsound.waves.utils import WHITE_NOISE
 
 
 def evaluate(expr, t, noise=None):
@@ -42,7 +42,7 @@ def away_from_edges(frequency, t, margin=1e-6):
 
 def ref_adsr(attack, decay, sustain, release, active, t):
     """Piecewise definition of an ADSR envelope, written independently of
-    the sympy construction in daw.envelope"""
+    the sympy construction in symsound.envelope"""
 
     def level(time):
         if time <= attack:

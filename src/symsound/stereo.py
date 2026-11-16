@@ -5,7 +5,7 @@ of such expressions: `StereoExpr(left, right)`. Nothing else changes. Each side 
 ordinary expression, so everything that works on a signal (mixing, scaling,
 `delay`, `low_pass_filter`, envelopes) works on a side, and `StereoExpr.map` applies
 one function to both sides at once. `pan`, which places a mono signal between
-the ears, is an effect and lives in `daw.effects`. See docs/stereo.md.
+the ears, is an effect and lives in `symsound.effects`. See docs/stereo.md.
 """
 
 from __future__ import annotations

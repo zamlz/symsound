@@ -1,4 +1,4 @@
-"""pan: placing a mono signal between the ears by an angle (daw.effects.spatial)"""
+"""pan: placing a mono signal between the ears by an angle (symsound.effects.spatial)"""
 
 import numpy as np
 import pytest
@@ -6,11 +6,11 @@ import sympy as sp
 from hypothesis import given
 from hypothesis import strategies as st
 
-from daw.effects import delay, pan
-from daw.waves.basic import sine
-from daw.waves.time import TIME
-from daw.waves.utils import compile
 from helpers import ref_pan_gains
+from symsound.effects import delay, pan
+from symsound.waves.basic import sine
+from symsound.waves.time import TIME
+from symsound.waves.utils import compile
 
 # The angle is not limited, so test far beyond a turn on either side
 angles = st.floats(min_value=-1000, max_value=1000, allow_nan=False)

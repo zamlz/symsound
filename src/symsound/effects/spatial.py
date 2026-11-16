@@ -1,14 +1,14 @@
 """Effects that place a sound between the ears.
 
-These turn a mono signal into a `StereoExpr` (see `daw.stereo`). Like every
+These turn a mono signal into a `StereoExpr` (see `symsound.stereo`). Like every
 effect here they are plain expressions of `TIME`.
 """
 
 import sympy as sp
 from sympy.core.expr import Expr
 
-from daw.stereo import StereoExpr
-from daw.waves.time import TIME
+from symsound.stereo import StereoExpr
+from symsound.waves.time import TIME
 
 
 def pan(signal: Expr, angle: Expr | float) -> StereoExpr:

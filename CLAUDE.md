@@ -1,4 +1,4 @@
-# Working on daw
+# Working on SymSound
 
 Read `guidelines.md` before changing anything. It is the source of truth for
 how we test, lint and commit. The short version:
@@ -16,7 +16,7 @@ how we test, lint and commit. The short version:
   Seed any noise in doc blocks. Changing `examples/house_with_low_pass.py` means updating
   `docs/house-with-low-pass-walkthrough.md`. See `guidelines.md` section 14.
 - Run everything with `nix flake check`; iterate with `nix develop -c pytest`.
-  Coverage of `src/daw` must stay at 100% (line and branch).
+  Coverage of `src/symsound` must stay at 100% (line and branch).
 - Run `nix develop -c python tools/mutation_check.py` after changing core logic.
 - New files must be `git add`ed before the flake can see them.
 - Commits: authored by the repo owner only, no `Co-Authored-By` trailers, unsigned

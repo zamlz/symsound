@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from daw.constants import DEFAULT_SAMPLE_RATE, FloatEnum, Note
+from symsound.constants import DEFAULT_SAMPLE_RATE, FloatEnum, Note
 
 SEMITONES = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 NAME_PATTERN = re.compile(r"^([A-G])(S?)(\d)$")

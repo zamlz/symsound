@@ -17,12 +17,13 @@ import sympy as sp
 from hypothesis import given
 from hypothesis import strategies as st
 
-import daw
-from daw import live
-from daw.constants import DEFAULT_SAMPLE_RATE, Note
-from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.filters import low_pass_filter
-from daw.live import (
+import symsound
+from helpers import evaluate
+from symsound import live
+from symsound.constants import DEFAULT_SAMPLE_RATE, Note
+from symsound.envelope import ACTIVE_DURATION, adsr_envelope
+from symsound.filters import low_pass_filter
+from symsound.live import (
     Instrument,
     LiveOutput,
     Mixer,
@@ -30,10 +31,9 @@ from daw.live import (
     Renderer,
     RingBuffer,
 )
-from daw.waves.basic import sawtooth, sine
-from daw.waves.time import TIME
-from daw.waves.utils import WHITE_NOISE, compile
-from helpers import evaluate
+from symsound.waves.basic import sawtooth, sine
+from symsound.waves.time import TIME
+from symsound.waves.utils import WHITE_NOISE, compile
 
 RATE = 8000
 ENVELOPE = adsr_envelope(0.02, 0.05, 0.6, 0.1)
@@ -663,13 +663,13 @@ class TestLiveOutput:
         code = (
             "import sys\n"
             "sys.modules['sounddevice'] = None\n"
-            "import daw.live as live\n"
+            "import symsound.live as live\n"
             "try:\n"
             "    live.LiveOutput(live.Mixer())\n"
             "except ImportError:\n"
             "    print('ok')\n"
         )
-        src = str(Path(daw.__file__).resolve().parents[1])
+        src = str(Path(symsound.__file__).resolve().parents[1])
         env = dict(os.environ)
         env["PYTHONPATH"] = os.pathsep.join(filter(None, [src, env.get("PYTHONPATH")]))
         result = subprocess.run(

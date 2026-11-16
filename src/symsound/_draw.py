@@ -12,7 +12,7 @@ import matplotlib
 import numpy as np
 import numpy.typing as npt
 
-from daw.analysis import row_of_frequency
+from symsound.analysis import row_of_frequency
 
 # pygame announces itself on import: not wanted in a library, nor in the docs
 os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
@@ -20,7 +20,7 @@ try:
     import pygame
 except ImportError as error:
     raise ImportError(
-        "the visualizer needs pygame: install it with pip install 'daw[gui]'"
+        "the visualizer needs pygame: install it with pip install 'symsound[gui]'"
     ) from error
 
 Rect = tuple[int, int, int, int]  # x, y, width, height

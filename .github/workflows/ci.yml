@@ -29,7 +29,7 @@ jobs:
           nix develop -c ruff check --output-format=github .
           nix develop -c ruff format --check tests
       - name: Types (mypy)
-        run: nix develop -c mypy src/daw
+        run: nix develop -c mypy src/symsound
       - name: Tests and coverage (pytest)
         run: nix develop -c pytest -p no:cacheprovider
       - name: Docs are up to date

@@ -1,4 +1,4 @@
-# daw
+# SymSound
 
 $$
 \begin{aligned}
@@ -15,13 +15,13 @@ $$
 
 A mathematical and programmatic audio engine. Signals are
 [SymPy](https://www.sympy.org) expressions of a single shared time symbol,
-`daw.waves.time.TIME`. Oscillators, envelopes, LFOs and time shifts are all
+`symsound.waves.time.TIME`. Oscillators, envelopes, LFOs and time shifts are all
 plain algebra, and an expression is only turned into samples when you play,
 save or plot it.
 
 ```python
-from daw.waves.basic import sine
-from daw.waves.utils import play
+from symsound.waves.basic import sine
+from symsound.waves.utils import play
 
 play(sine(440), duration=2.0)
 ```
@@ -53,18 +53,18 @@ nix develop -c python tools/build_docs.py --check  # fail if they are stale
 
 | Path | Contents |
 | --- | --- |
-| `src/daw/constants.py` | `Note` frequency table, default sample rate |
-| `src/daw/waves/basic.py` | `sine`, `square`, `triangle`, `sawtooth`, `trigger` |
-| `src/daw/waves/time.py` | `TIME` symbol and the `BPM` helper |
-| `src/daw/waves/utils.py` | `compile`, `play`, `save`, `plot`, `WHITE_NOISE` |
-| `src/daw/envelope.py` | `adsr_envelope` and the `ACTIVE_DURATION` symbol |
-| `src/daw/filters.py` | First-order low-pass filter, applied on the sample grid |
-| `src/daw/effects/` | `delay` (a signal, later: echo and reverb are sums of delays) in `timing.py`, `pan` in `spatial.py` |
-| `src/daw/stereo.py` | `StereoExpr`, a left and a right signal, and `mono_to_stereo` |
-| `src/daw/keyboard.py` | `keyboard`: play a signal with your computer's keys, with a scope and a spectrogram |
-| `src/daw/visualizer.py` | `visualize`: a window that plays a signal and shows it (needs `pip install 'daw[gui]'`) |
-| `src/daw/analysis.py` | The numbers behind the spectrogram and the overview, with no GUI |
-| `src/daw/live.py` | Real-time engine: notes rendered in pieces, mixed and sent to the speakers |
+| `src/symsound/constants.py` | `Note` frequency table, default sample rate |
+| `src/symsound/waves/basic.py` | `sine`, `square`, `triangle`, `sawtooth`, `trigger` |
+| `src/symsound/waves/time.py` | `TIME` symbol and the `BPM` helper |
+| `src/symsound/waves/utils.py` | `compile`, `play`, `save`, `plot`, `WHITE_NOISE` |
+| `src/symsound/envelope.py` | `adsr_envelope` and the `ACTIVE_DURATION` symbol |
+| `src/symsound/filters.py` | First-order low-pass filter, applied on the sample grid |
+| `src/symsound/effects/` | `delay` (a signal, later: echo and reverb are sums of delays) in `timing.py`, `pan` in `spatial.py` |
+| `src/symsound/stereo.py` | `StereoExpr`, a left and a right signal, and `mono_to_stereo` |
+| `src/symsound/keyboard.py` | `keyboard`: play a signal with your computer's keys, with a scope and a spectrogram |
+| `src/symsound/visualizer.py` | `visualize`: a window that plays a signal and shows it (needs `pip install 'symsound[gui]'`) |
+| `src/symsound/analysis.py` | The numbers behind the spectrogram and the overview, with no GUI |
+| `src/symsound/live.py` | Real-time engine: notes rendered in pieces, mixed and sent to the speakers |
 | `docs/` | How to use the library, with graphs; the code blocks are executed |
 | `examples/` | Example scripts (`house.py`, `house_with_low_pass.py`, ...) |
 | `tests/` | Pytest suite, golden files and guard tests |
@@ -94,7 +94,7 @@ pip install -e '.[develop]'
 | Run tests | `pytest` (add `-m "not slow"` to skip the examples) |
 | Lint | `ruff check .` |
 | Format | `ruff format tests` |
-| Type check | `mypy src/daw` |
+| Type check | `mypy src/symsound` |
 
 Tool settings live in `pyproject.toml` (ruff, mypy, pytest).
 

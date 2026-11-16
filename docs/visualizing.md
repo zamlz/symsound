@@ -10,11 +10,11 @@
 `visualize` opens a window that plays a signal and shows it as it plays: a scope
 of the last few milliseconds, a spectrogram that scrolls with the playhead, and
 a seek bar. It needs pygame, which the rest of the library does not
-(`pip install 'daw[gui]'`; the dev shell has it).
+(`pip install 'symsound[gui]'`; the dev shell has it).
 
 ```python no-run
-from daw.waves.basic import sine
-from daw.visualizer import visualize
+from symsound.waves.basic import sine
+from symsound.visualizer import visualize
 
 visualize(sine(440), duration=5.0, title="A4")      # opens a window
 ```
@@ -27,7 +27,7 @@ import runpy
 
 import numpy as np
 
-from daw.visualizer import snapshot
+from symsound.visualizer import snapshot
 
 ns = runpy.run_path("../examples/house.py")
 np.random.seed(0)    # the hat is noise: seed it so this picture is the same every run
@@ -84,7 +84,7 @@ import runpy
 
 import numpy as np
 
-from daw.visualizer import snapshot
+from symsound.visualizer import snapshot
 
 ns = runpy.run_path("../examples/house_with_low_pass.py")
 np.random.seed(0)
@@ -97,7 +97,7 @@ snapshot(ns["w"], duration=30, at=15.4, title="house_with_low_pass.py", playing=
 
 ## The numbers behind the picture
 
-The drawing is built on a few functions in `daw.analysis` that you can use directly.
+The drawing is built on a few functions in `symsound.analysis` that you can use directly.
 
 `spectrogram_columns(samples, sample_rate, rows=256)` returns an array of shape
 `(columns, rows)` with values from 0 to 1. Column `k` analyses the 2048 samples
@@ -109,7 +109,7 @@ way:
 import matplotlib.pyplot as plt
 import numpy as np
 
-from daw.analysis import frequency_of_row, row_of_frequency, spectrogram_columns
+from symsound.analysis import frequency_of_row, row_of_frequency, spectrogram_columns
 
 rate = 8000
 t = np.arange(2 * rate) / rate
@@ -146,7 +146,7 @@ the row for 1000 Hz: 142.6
 `width` equal slices, which is what the seek bar draws:
 
 ```python
-from daw.analysis import peak_envelope
+from symsound.analysis import peak_envelope
 
 low, high = peak_envelope([1, 5, 2, -3, 0, 4], 3)
 print("lowest in each third: ", low.tolist())
@@ -164,16 +164,16 @@ highest in each third: [5.0, 2.0, 4.0]
 
 ## Playing a finished signal: `Player`
 
-`visualize` plays through a `Player` from `daw.live`: a finished signal that can be
+`visualize` plays through a `Player` from `symsound.live`: a finished signal that can be
 played, paused and sought. `Player.render(count)` is what the sound card calls;
 it hands out the next `count` samples while playing (silence when paused) and
 moves the position on. The audio therefore sets the clock, and a display that
 reads `player.position` is always in step with what you hear:
 
 ```python
-from daw.live import Player
-from daw.waves.basic import sine
-from daw.waves.utils import compile
+from symsound.live import Player
+from symsound.waves.basic import sine
+from symsound.waves.utils import compile
 
 rate = 8000
 player = Player(compile(sine(440), 2.0, rate), rate)

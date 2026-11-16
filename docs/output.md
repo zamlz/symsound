@@ -1,7 +1,7 @@
 Playing, saving and plotting
 ============================
 
-All in `daw.waves.utils`. Each takes a signal expression and a length.
+All in `symsound.waves.utils`. Each takes a signal expression and a length.
 
 <!-- md-toc: -->
 - [Samples, WAV files and speakers](#samples-wav-files-and-speakers)
@@ -17,8 +17,8 @@ All in `daw.waves.utils`. Each takes a signal expression and a length.
 ## Samples, WAV files and speakers
 
 ```python
-from daw.waves.basic import sine
-from daw.waves.utils import compile, save
+from symsound.waves.basic import sine
+from symsound.waves.utils import compile, save
 
 tone = sine(440)
 samples = compile(tone, duration=0.5)
@@ -46,8 +46,8 @@ Output:
 not. Press Ctrl-C to stop `play` early.
 
 ```python no-run
-from daw.waves.basic import sine
-from daw.waves.utils import play
+from symsound.waves.basic import sine
+from symsound.waves.utils import play
 
 play(sine(440), 2.0)          # needs speakers
 ```
@@ -58,8 +58,8 @@ play(sine(440), 2.0)          # needs speakers
 a window (this is how every graph in these docs is made).
 
 ```python
-from daw.waves.basic import sine
-from daw.waves.utils import plot
+from symsound.waves.basic import sine
+from symsound.waves.utils import plot
 
 plot(sine(3), duration=1.0, output_file="img/output-plot.png")
 ```
@@ -78,8 +78,8 @@ each its own panel with its own vertical scale, which is easier to read when
 the levels differ a lot.
 
 ```python
-from daw.waves.basic import sine, square
-from daw.waves.utils import plot
+from symsound.waves.basic import sine, square
+from symsound.waves.utils import plot
 
 plot(
     [sine(3), 0.2 * square(5)],
@@ -103,8 +103,8 @@ the beginning, so things with memory (like [filters](filters.md)) are drawn
 exactly as they would sound at that moment.
 
 ```python
-from daw.waves.basic import sine
-from daw.waves.utils import plot
+from symsound.waves.basic import sine
+from symsound.waves.utils import plot
 
 plot(sine(50), duration=0.1, start=2.0, output_file="img/output-start.png")
 ```
@@ -117,9 +117,9 @@ plot(sine(50), duration=0.1, start=2.0, output_file="img/output-start.png")
 Pass a `BPM` and `duration` and `start` are read as beats, with a beats axis:
 
 ```python
-from daw.waves.basic import sine
-from daw.waves.time import BPM
-from daw.waves.utils import plot
+from symsound.waves.basic import sine
+from symsound.waves.time import BPM
+from symsound.waves.utils import plot
 
 plot(
     [sine(1), sine(2)],
@@ -144,9 +144,9 @@ colour is how loud that frequency is (brighter is louder, over a 90 dB range).
 A rising sweep from 200 Hz makes a diagonal line:
 
 ```python
-from daw.waves.basic import sine
-from daw.waves.time import TIME
-from daw.waves.utils import spectrogram
+from symsound.waves.basic import sine
+from symsound.waves.time import TIME
+from symsound.waves.utils import spectrogram
 
 spectrogram(
     sine(200 + 600 * TIME),
@@ -164,8 +164,8 @@ spectrogram(
 A square wave has odd harmonics: lines at 1x, 3x, 5x... the base frequency.
 
 ```python
-from daw.waves.basic import square
-from daw.waves.utils import spectrogram
+from symsound.waves.basic import square
+from symsound.waves.utils import spectrogram
 
 spectrogram(
     square(300),
@@ -194,6 +194,6 @@ release.
 
 ## Helpers
 
-`daw.waves.utils.linspace(duration, sample_rate)` makes the array of sample times
+`symsound.waves.utils.linspace(duration, sample_rate)` makes the array of sample times
 that `compile` uses, and `white_noise(duration, sample_rate)` makes the noise
 samples that replace `WHITE_NOISE`. You rarely need them directly.

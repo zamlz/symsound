@@ -17,8 +17,8 @@ from sympy.parsing.sympy_parser import (
     standard_transformations,
 )
 
-from daw.waves.time import TIME
-from daw.waves.utils import WHITE_NOISE
+from symsound.waves.time import TIME
+from symsound.waves.utils import WHITE_NOISE
 
 ROOT = Path(__file__).parent.parent
 SPELLINGS = [

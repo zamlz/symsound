@@ -2,7 +2,7 @@
 grid, so it works on any signal: sines, square waves, noise, envelopes,
 shifted notes.
 
-Three kinds of reference are used and are independent of daw.filters:
+Three kinds of reference are used and are independent of symsound.filters:
 closed forms (RC step/sine response, noise variance), scipy's continuous-time
 simulator and ODE solver, and a plain-Python loop of the discretisation.
 """
@@ -14,12 +14,12 @@ from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 from scipy import integrate, signal
 
-from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.filters import LowPass, apply_low_pass, low_pass_filter
-from daw.waves.basic import sawtooth, sine, square, triangle
-from daw.waves.time import TIME
-from daw.waves.utils import WHITE_NOISE, compile
 from helpers import evaluate
+from symsound.envelope import ACTIVE_DURATION, adsr_envelope
+from symsound.filters import LowPass, apply_low_pass, low_pass_filter
+from symsound.waves.basic import sawtooth, sine, square, triangle
+from symsound.waves.time import TIME
+from symsound.waves.utils import WHITE_NOISE, compile
 
 SR = 44100
 

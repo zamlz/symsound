@@ -7,10 +7,10 @@ on screen, a scope and a spectrogram. The letter keys play the notes (see
 sounding as it happens.
 
 The slow, symbolic work of turning the function into something fast is done for
-every note before the window opens (`daw.live.Instrument`), so playing is only
+every note before the window opens (`symsound.live.Instrument`), so playing is only
 a little arithmetic.
 
-It needs pygame (`pip install 'daw[gui]'`), which the rest of the package does not.
+It needs pygame (`pip install 'symsound[gui]'`), which the rest of the package does not.
 """
 
 import os
@@ -20,7 +20,7 @@ from pathlib import Path
 
 from sympy.core.expr import Expr
 
-from daw._draw import (
+from symsound._draw import (
     BACKGROUND,
     BAR_HEIGHT,
     MARGIN,
@@ -35,9 +35,9 @@ from daw._draw import (
     _run,
     pygame,
 )
-from daw.analysis import LiveSpectrogram
-from daw.constants import DEFAULT_SAMPLE_RATE, Note
-from daw.live import Instrument, LiveOutput, Mixer, RingBuffer
+from symsound.analysis import LiveSpectrogram
+from symsound.constants import DEFAULT_SAMPLE_RATE, Note
+from symsound.live import Instrument, LiveOutput, Mixer, RingBuffer
 
 # (pygame key, label, semitones above the C of the current octave): a piano
 # laid out over the keyboard, white keys on the home row and black keys above
@@ -171,7 +171,7 @@ class _Keyboard:
         ring: RingBuffer,
         *,
         octave: int = 4,
-        title: str = "daw keyboard",
+        title: str = "symsound keyboard",
         drive_clock: bool = False,
     ) -> None:
         if not FIRST_OCTAVE <= octave <= LAST_OCTAVE:
@@ -323,7 +323,7 @@ def keyboard(
     gain: float = 0.25,
     require_envelope: bool = True,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
-    title: str = "daw keyboard",
+    title: str = "symsound keyboard",
     silent: bool = False,
     size: tuple[int, int] = WINDOW_SIZE,
 ) -> None:
@@ -367,7 +367,7 @@ def keyboard_snapshot(
     gain: float = 0.25,
     require_envelope: bool = True,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
-    title: str = "daw keyboard",
+    title: str = "symsound keyboard",
     size: tuple[int, int] = WINDOW_SIZE,
 ) -> None:
     """Save a picture of the keyboard after `held` notes have been sounding

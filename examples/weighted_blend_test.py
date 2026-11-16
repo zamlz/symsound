@@ -3,11 +3,11 @@
 import numpy as np
 import sympy as sp
 
-from daw.constants import Note
-from daw.envelope import adsr_envelope
-from daw.waves.basic import sawtooth, sine, square, triangle
-from daw.waves.time import TIME
-from daw.waves.utils import play
+from symsound.constants import Note
+from symsound.envelope import adsr_envelope
+from symsound.waves.basic import sawtooth, sine, square, triangle
+from symsound.waves.time import TIME
+from symsound.waves.utils import play
 
 
 def weighted_blend(w1, w2, blend_duration, sharpness=1):

@@ -5,11 +5,11 @@ import sympy as sp
 from hypothesis import given
 from hypothesis import strategies as st
 
-from daw.effects import delay, pan
-from daw.stereo import StereoExpr, mono_to_stereo
-from daw.waves.basic import sine
-from daw.waves.utils import WHITE_NOISE, compile, play, save
 from helpers import evaluate, ref_pan_gains
+from symsound.effects import delay, pan
+from symsound.stereo import StereoExpr, mono_to_stereo
+from symsound.waves.basic import sine
+from symsound.waves.utils import WHITE_NOISE, compile, play, save
 
 angles = st.floats(min_value=-10, max_value=10, allow_nan=False)
 RATE = 8000
@@ -137,7 +137,7 @@ class TestCompileStereo:
         )
 
     def test_a_filter_on_one_side_starts_at_rest(self):
-        from daw.filters import low_pass_filter
+        from symsound.filters import low_pass_filter
 
         pair = StereoExpr(sine(100), low_pass_filter(sine(100), 50))
         samples = compile(pair, 0.25, RATE)

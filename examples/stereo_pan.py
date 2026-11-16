@@ -15,12 +15,12 @@ Each version plays in turn. Use headphones, or two speakers, to hear it.
 import numpy as np
 import sympy as sp
 
-from daw.constants import Note
-from daw.effects import delay, pan
-from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.stereo import StereoExpr
-from daw.waves.basic import sine
-from daw.waves.utils import compile, play
+from symsound.constants import Note
+from symsound.effects import delay, pan
+from symsound.envelope import ACTIVE_DURATION, adsr_envelope
+from symsound.stereo import StereoExpr
+from symsound.waves.basic import sine
+from symsound.waves.utils import compile, play
 
 pluck = adsr_envelope(0.005, 0.25, 0.0, 0.1).subs(ACTIVE_DURATION, 0.01)
 

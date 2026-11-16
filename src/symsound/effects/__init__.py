@@ -4,11 +4,11 @@
   docs/effects.md).
 * `spatial`: `pan`, a mono signal placed between the ears (see docs/stereo.md).
 
-The functions are imported here, so `from daw.effects import delay, pan` is all
+The functions are imported here, so `from symsound.effects import delay, pan` is all
 anyone needs.
 """
 
-from daw.effects.spatial import pan
-from daw.effects.timing import delay
+from symsound.effects.spatial import pan
+from symsound.effects.timing import delay
 
 __all__ = ["delay", "pan"]

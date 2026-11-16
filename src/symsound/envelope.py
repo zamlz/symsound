@@ -2,7 +2,7 @@
 import sympy as sp
 from sympy.core.expr import Expr
 
-from daw.waves.time import TIME
+from symsound.waves.time import TIME
 
 ACTIVE_DURATION = sp.symbols('active_duration')
 

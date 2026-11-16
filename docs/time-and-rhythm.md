@@ -13,7 +13,7 @@
 `BPM` converts between beats and seconds so you can write music in beats:
 
 ```python
-from daw.waves.time import BPM
+from symsound.waves.time import BPM
 
 bpm = BPM(140)
 print(bpm.time(1))        # seconds in one beat
@@ -40,9 +40,9 @@ one cycle every `n` beats, which locks it to the tempo. `sine(bpm.frequency(1))`
 is an LFO that goes round once per beat. Plots can use beats on the axis too:
 
 ```python
-from daw.waves.basic import sine
-from daw.waves.time import BPM
-from daw.waves.utils import plot
+from symsound.waves.basic import sine
+from symsound.waves.time import BPM
+from symsound.waves.utils import plot
 
 bpm = BPM(140)
 plot(
@@ -65,9 +65,9 @@ plot(
 To start a signal `delay` seconds later, replace `TIME` with `TIME - delay`:
 
 ```python
-from daw.waves.basic import sine
-from daw.waves.time import TIME
-from daw.waves.utils import plot
+from symsound.waves.basic import sine
+from symsound.waves.time import TIME
+from symsound.waves.utils import plot
 
 note = sine(3)
 later = note.subs(TIME, TIME - 1.0)    # the same note, one second later
@@ -86,9 +86,9 @@ first second (it is a sine at negative time). Delaying just moves the waveform;
 it does not silence the part before. To start it silent, multiply by `trigger`:
 
 ```python
-from daw.waves.basic import sine, trigger
-from daw.waves.time import TIME
-from daw.waves.utils import plot
+from symsound.waves.basic import sine, trigger
+from symsound.waves.time import TIME
+from symsound.waves.utils import plot
 
 starts_silent = sine(3).subs(TIME, TIME - 1.0) * trigger(1.0)
 plot(starts_silent, duration=2.0, output_file="img/time-subs-silent.png")
@@ -107,9 +107,9 @@ inside that one oscillator. `TIME + x` starts the oscillator `x` seconds *into*
 its cycle, which is the opposite direction from `subs`:
 
 ```python
-from daw.waves.basic import sawtooth
-from daw.waves.time import TIME
-from daw.waves.utils import plot
+from symsound.waves.basic import sawtooth
+from symsound.waves.time import TIME
+from symsound.waves.utils import plot
 
 normal = sawtooth(1)
 ahead = sawtooth(1, time_shift=TIME + 0.25)   # starts a quarter cycle in
@@ -131,11 +131,11 @@ saw hits within the bar. A shift by a whole number of cycles changes nothing.
 The usual pattern is a loop that keeps a running position in beats:
 
 ```python
-from daw.constants import Note
-from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.waves.basic import sine
-from daw.waves.time import BPM, TIME
-from daw.waves.utils import spectrogram
+from symsound.constants import Note
+from symsound.envelope import ACTIVE_DURATION, adsr_envelope
+from symsound.waves.basic import sine
+from symsound.waves.time import BPM, TIME
+from symsound.waves.utils import spectrogram
 
 bpm = BPM(120)
 melody = [(Note.C4, 1), (Note.E4, 1), (None, 1), (Note.G4, 2)]   # (pitch, beats)

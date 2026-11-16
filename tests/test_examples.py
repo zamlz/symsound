@@ -14,13 +14,13 @@ import pygame
 import pytest
 import soundfile as sf
 
-from daw import keyboard as keyboard_module
-from daw.constants import DEFAULT_SAMPLE_RATE, Note
-from daw.live import Mixer, NoteSource
-from daw.stereo import StereoExpr
-from daw.waves.utils import compile, linspace
 from golden import check_golden
 from helpers import evaluate
+from symsound import keyboard as keyboard_module
+from symsound.constants import DEFAULT_SAMPLE_RATE, Note
+from symsound.live import Mixer, NoteSource
+from symsound.stereo import StereoExpr
+from symsound.waves.utils import compile, linspace
 
 pytestmark = pytest.mark.slow
 
@@ -501,8 +501,8 @@ class TestKeyboardSynth:
         assert (held[int(1.0 * self.SR + 0.6 * self.SR) + 5 :] == 0).all()
 
     def test_the_sound_is_a_signal_in_time_and_the_active_duration_only(self, synth):
-        from daw.envelope import ACTIVE_DURATION
-        from daw.waves.time import TIME
+        from symsound.envelope import ACTIVE_DURATION
+        from symsound.waves.time import TIME
 
         expression = synth["synth"](Note.A3)
         assert expression.free_symbols == {TIME, ACTIVE_DURATION}
@@ -513,7 +513,7 @@ class TestKeyboardSynth:
             assert NoteSource(synth["synth"](note), self.SR).has_release
 
     def test_it_is_nothing_like_a_plain_sine(self, synth):
-        from daw.waves.basic import sine
+        from symsound.waves.basic import sine
 
         heard = self.render(synth, Note.A3, seconds=1.0)[: self.SR // 2]
         plain = compile(sine(Note.A3) * 0.5, 0.5, self.SR)
@@ -703,7 +703,7 @@ class TestEchoPulse:
         assert np.abs(played).max() <= 1.0
 
     def test_it_is_a_plain_signal_of_time(self, module):
-        from daw.waves.time import TIME
+        from symsound.waves.time import TIME
 
         assert module["echo"](module["pulse"], 0.25).free_symbols == {TIME}
 
@@ -848,7 +848,7 @@ class TestEchoMelody:
             assert np.abs(samples).max() > 0.2, name
 
     def test_every_version_is_a_plain_signal_of_time(self, module):
-        from daw.waves.time import TIME
+        from symsound.waves.time import TIME
 
         for signal, _ in module["versions"].values():
             assert signal.free_symbols == {TIME}
@@ -1086,7 +1086,7 @@ class TestStereoPan:
             assert np.abs(samples).max() > 0.2, name
 
     def test_every_version_is_a_stereo_signal_of_time(self, pan_module):
-        from daw.waves.time import TIME
+        from symsound.waves.time import TIME
 
         for signal, _ in pan_module["versions"].values():
             assert isinstance(signal, StereoExpr)

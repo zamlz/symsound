@@ -4,9 +4,6 @@ import sympy as sp
 from hypothesis import assume, given
 from hypothesis import strategies as st
 
-from daw.constants import Note
-from daw.waves.basic import sawtooth, sawtooth_v2, sine, square, triangle, trigger
-from daw.waves.time import TIME
 from helpers import (
     away_from_edges,
     cycle_fraction,
@@ -15,6 +12,9 @@ from helpers import (
     ref_square,
     ref_triangle,
 )
+from symsound.constants import Note
+from symsound.waves.basic import sawtooth, sawtooth_v2, sine, square, triangle, trigger
+from symsound.waves.time import TIME
 
 frequencies = st.floats(min_value=0.5, max_value=4000, allow_nan=False)
 times = st.lists(
