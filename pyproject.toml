@@ -32,6 +32,7 @@ develop = [
   "mypy",
   "pytest",
   "pytest-cov",
+  "pytest-xdist",
   "ruff"
 ]
 

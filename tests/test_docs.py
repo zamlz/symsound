@@ -19,6 +19,7 @@ import re
 import shutil
 import subprocess
 import sys
+import threading
 from pathlib import Path
 
 import pytest
@@ -330,6 +331,88 @@ class TestBuildDocsTool:
         new = self.readme_tree(tmp_path / "new", "![t](docs/img/t.png)\n")
         problems = "\n".join(tool.differences(old, new))
         assert "img/t.png: referenced but no block draws it" in problems
+
+    def fake_md(self, tool, monkeypatch, barrier=None):
+        """`md` replaced by something that marks what it was asked to do"""
+
+        def run(command, text, cwd):
+            if barrier is not None:
+                barrier.wait(timeout=10)
+            if command == "code":
+                return text + (
+                    "Traceback (most recent call last)\n" if "bad" in text else ""
+                )
+            return text + "<toc>\n"
+
+        monkeypatch.setattr(tool, "run_md", run)
+
+    def pages(self, root, names):
+        root.mkdir()
+        for name in names:
+            (root / f"{name}.md").write_text(f"page {name}\n")
+        return root
+
+    def test_build_rewrites_every_page_with_the_code_then_the_toc_step(
+        self, tool, tmp_path, monkeypatch
+    ):
+        self.fake_md(tool, monkeypatch)
+        docs = self.pages(tmp_path / "docs", ["a", "b", "c"])
+        assert tool.build(docs) == []
+        for name in "abc":
+            assert (docs / f"{name}.md").read_text() == f"page {name}\n<toc>\n"
+
+    def test_build_also_builds_the_readme_from_the_folder_above_docs(
+        self, tool, tmp_path, monkeypatch
+    ):
+        ran_in = []
+
+        def run(command, text, cwd):
+            ran_in.append((command, text.strip().split("\n")[0], cwd))
+            return text
+
+        monkeypatch.setattr(tool, "run_md", run)
+        docs = self.pages(tmp_path / "docs", ["a"])
+        (tmp_path / "README.md").write_text("readme\n")
+        assert tool.build(docs, workers=1) == []
+        assert ("code", "readme", tmp_path) in ran_in
+        assert ("toc", "readme", tmp_path) in ran_in
+        assert ("code", "page a", docs) in ran_in
+
+    def test_build_reports_a_failed_block_by_page_in_page_order(
+        self, tool, tmp_path, monkeypatch
+    ):
+        self.fake_md(tool, monkeypatch)
+        docs = self.pages(tmp_path / "docs", ["a", "bad-one", "c", "bad-two"])
+        problems = tool.build(docs)
+        assert [p.split(":")[0] for p in problems] == ["bad-one.md", "bad-two.md"]
+        assert all("Traceback (most recent call last)" in p for p in problems)
+
+    def test_build_runs_pages_side_by_side(self, tool, tmp_path, monkeypatch):
+        # Each fake md call waits for a second one, so this only finishes if two
+        # pages are being built at the same moment
+        self.fake_md(tool, monkeypatch, barrier=threading.Barrier(2))
+        docs = self.pages(tmp_path / "docs", ["a", "b"])
+        assert tool.build(docs, workers=2) == []
+
+    def test_build_with_one_worker_gives_the_same_result(
+        self, tool, tmp_path, monkeypatch
+    ):
+        self.fake_md(tool, monkeypatch)
+        names = ["a", "bad", "c"]
+        many = self.pages(tmp_path / "many", names)
+        one = self.pages(tmp_path / "one", names)
+        assert tool.build(many, workers=3) == tool.build(one, workers=1)
+        for name in names:
+            assert (many / f"{name}.md").read_text() == (one / f"{name}.md").read_text()
+
+    def test_a_failure_of_md_itself_stops_the_build(self, tool, tmp_path, monkeypatch):
+        def broken(command, text, cwd):
+            raise SystemExit("md code failed")
+
+        monkeypatch.setattr(tool, "run_md", broken)
+        docs = self.pages(tmp_path / "docs", ["a", "b"])
+        with pytest.raises(SystemExit, match="md code failed"):
+            tool.build(docs)
 
 
 @pytest.mark.slow

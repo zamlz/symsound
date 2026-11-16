@@ -29,6 +29,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -80,19 +81,26 @@ def pages_of(docs):
     return pages
 
 
-def build(docs):
-    """Regenerate every page in `docs`, and the README. Returns the problems found."""
-    problems = []
-    for page, folder in pages_of(docs):
-        text = page.read_text()
-        built = run_md("toc", run_md("code", text, folder), folder)
-        for marker in FAILURE_MARKERS:
-            if marker in built:
-                problems.append(
-                    f"{page.name}: a code block failed\n    {excerpt(built, marker)}"
-                )
-        page.write_text(built)
+def build_page(page, folder):
+    """Regenerate one page in place. Returns the problems found in it."""
+    built = run_md("toc", run_md("code", page.read_text(), folder), folder)
+    problems = [
+        f"{page.name}: a code block failed\n    {excerpt(built, marker)}"
+        for marker in FAILURE_MARKERS
+        if marker in built
+    ]
+    page.write_text(built)
     return problems
+
+
+def build(docs, workers=None):
+    """Regenerate every page in `docs`, and the README, `workers` at a time
+    (default: one per CPU). Pages share nothing but the folder, so they can run
+    side by side; the problems come back in page order."""
+    pages = pages_of(docs)
+    with ThreadPoolExecutor(max_workers=workers or os.cpu_count() or 1) as pool:
+        found = list(pool.map(lambda item: build_page(*item), pages))
+    return [problem for page_problems in found for problem in page_problems]
 
 
 def referenced_images(docs):
