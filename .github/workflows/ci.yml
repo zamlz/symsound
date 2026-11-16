@@ -52,9 +52,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/nix
-      # The docs have their own job, so their freshness test is left out here
+      # The docs have their own job, so their freshness test is left out here.
+      # loadscope keeps a test class on one worker, so a fixture that is slow to
+      # build (the reverb example's) is built once, not once per worker
       - run: >
-          nix develop .#ci -c pytest -n auto -p no:cacheprovider
+          nix develop .#ci -c pytest -n auto --dist loadscope -p no:cacheprovider
           --deselect tests/test_docs.py::test_docs_are_up_to_date_with_what_their_code_produces
 
   docs:
