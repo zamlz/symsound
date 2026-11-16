@@ -3,6 +3,7 @@
 <!-- md-toc: -->
 - [Two signals, one for each ear](#two-signals-one-for-each-ear)
 - [Placing a sound: `pan`](#placing-a-sound-pan)
+  - [The unit circle](#the-unit-circle)
   - [Why equal power](#why-equal-power)
   - [An angle that moves](#an-angle-that-moves)
   - [An angle with no limit](#an-angle-with-no-limit)
@@ -95,6 +96,92 @@ At angle `0` the sound is the same in both ears: it sounds centred, like mono,
 but each ear gets `1/sqrt(2)` of the signal (3 dB less), not all of it.
 `mono_to_stereo(x)` gives each ear the whole signal, so `pan(x, 0)` is
 `mono_to_stereo(x) / sqrt(2)`. The reason is below.
+
+### The unit circle
+
+Where the angle comes from is a picture on the unit circle. The two gains,
+`(left, right)`, are the coordinates of a point on it:
+
+```
+left = cos(phi)    right = sin(phi)
+```
+
+where `phi` is the angle measured from the left-gain axis. Every point on the
+circle has `left**2 + right**2 = 1`, which is why the power never changes. The
+part of the circle where both gains are positive, so that both ears hear the
+sound the right way up, is the quarter arc from `(1, 0)` to `(0, 1)`:
+
+- `phi = 0` is `(1, 0)`: all left.
+- `phi = pi/2` is `(0, 1)`: all right.
+- `phi = pi/4` is `(0.707, 0.707)`, the middle of the arc: the centre.
+
+A pan from one speaker to the other is a trip along that arc, a quarter of a
+turn, `pi/2` wide. That is why the angle `pan` takes covers a span of `pi/2`
+and no more: it is `-pi/4` to `pi/4`, not `-pi/2` to `pi/2`. `pan` measures its
+angle from the middle of the arc, so the middle is `0` and the two ends are
+`pi/4` either side of it:
+
+```
+phi = pi/4 + angle
+```
+
+```python
+import matplotlib.pyplot as plt
+import numpy as np
+
+phi = np.linspace(0, 2 * np.pi, 721)
+arc = np.linspace(0, np.pi / 2, 181)
+
+fig, ax = plt.subplots(figsize=(7, 7))
+ax.plot(np.cos(phi), np.sin(phi), color="lightgrey", linestyle="--")
+ax.plot(np.cos(arc), np.sin(arc), color="C0", linewidth=3)
+ax.axhline(0, color="black", linewidth=0.5)
+ax.axvline(0, color="black", linewidth=0.5)
+for angle, label, offset in [
+    (-np.pi / 4, "all left: angle -pi/4", (0.04, -0.12)),
+    (0, "centre: angle 0", (0.05, 0.03)),
+    (np.pi / 4, "all right: angle pi/4", (-0.38, 0.06)),
+]:
+    point = (np.cos(np.pi / 4 + angle), np.sin(np.pi / 4 + angle))
+    ax.plot(*point, "o", color="C3")
+    ax.annotate(label, point, (point[0] + offset[0], point[1] + offset[1]))
+ax.annotate("past the edge: one gain\nturns negative (anti-phase)",
+            (-0.7, -0.7), ha="center", color="grey")
+ax.set_xlabel("left gain  =  cos(phi)")
+ax.set_ylabel("right gain  =  sin(phi)")
+ax.set_title("pan moves along the quarter arc from (1, 0) to (0, 1)")
+ax.set_aspect("equal")
+ax.set_xlim(-1.25, 1.25)
+ax.set_ylim(-1.25, 1.25)
+ax.grid(True)
+fig.tight_layout()
+fig.savefig("img/stereo-unit-circle.png", dpi=100)
+for angle in (-np.pi / 4, 0, np.pi / 4):
+    left, right = np.cos(np.pi / 4 + angle), np.sin(np.pi / 4 + angle)
+    print(f"angle {angle / np.pi:5.2f} pi: left {left:.3f}, right {right:.3f}")
+```
+<!-- md-code: id="stereo-unit-circle"; bin="python3" -->
+
+Output:
+```
+angle -0.25 pi: left 1.000, right 0.000
+angle  0.00 pi: left 0.707, right 0.707
+angle  0.25 pi: left 0.000, right 1.000
+
+```
+<!-- md-code-output: id="stereo-unit-circle" -->
+
+![The pan angle as a point on the unit circle](img/stereo-unit-circle.png)
+
+Past either end the point does not stop. It carries on round the circle into the
+next quadrant, where one of the gains is negative: that copy of the signal is
+upside down (anti-phase). A whole turn, `2*pi`, is back where it started. That
+is why the angle can be any number (see "An angle with no limit" below).
+
+One caution: this angle is a place on the gain circle, not the direction of the
+sound in the room. The real direction depends on where your speakers are, and
+for a normal stereo setup it is a different, non-linear function of the two
+gains.
 
 ### Why equal power
 
@@ -439,5 +526,9 @@ python examples/stereo_phase_cancel.py # two sines that cancel, in mono and in s
 ## The limits
 
 - `visualize` and `keyboard` do not take a `StereoExpr` yet.
+- `pan` places a mono signal. It does not take a `StereoExpr`: passing one stops
+  with a SymPy error. To place the two channels of a stereo signal, pan each one
+  on its own and add the sides, as `examples/stereo_placed.py` does with its
+  `mix` helper.
 - A `StereoExpr` is a pair, not an expression: it cannot be added to a mono signal
   or multiplied. Apply the arithmetic to each side, or use `map`.
