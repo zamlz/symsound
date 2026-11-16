@@ -9,30 +9,84 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Every tool is its own job, so they run side by side and a failure names the
+# tool at once, and nothing runs twice. `check` at the end is the one status the
+# rules on main require: it passes only when every job before it did.
+#
+# Everything but the docs runs in the `ci` dev shell, which leaves out `md`
+# (mdutils is built from source, and only the docs need it).
 jobs:
-  # Each tool runs as its own step, so its output is right there in the log.
-  # `nix flake check` at the end is the same gate as locally; it re-runs
-  # everything in the Nix sandbox and also proves the flake itself evaluates.
-  check:
+  ruff:
+    name: Lint (ruff check)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/nix
+      - run: nix develop .#ci -c ruff check --output-format=github .
+
+  format:
+    name: Lint (ruff format)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/nix
+      - run: nix develop .#ci -c ruff format --check tests
+
+  mypy:
+    name: Types (mypy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/nix
+      - run: nix develop .#ci -c mypy src/daw
+
+  tests:
+    name: Tests and coverage (pytest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       HYPOTHESIS_PROFILE: ci
     steps:
       - uses: actions/checkout@v5
-      - uses: cachix/install-nix-action@v31
-        with:
-          extra_nix_config: |
-            experimental-features = nix-command flakes
-      - name: Lint (ruff)
+      - uses: ./.github/actions/nix
+      # The docs have their own job, so their freshness test is left out here
+      - run: >
+          nix develop .#ci -c pytest -n auto -p no:cacheprovider
+          --deselect tests/test_docs.py::test_docs_are_up_to_date_with_what_their_code_produces
+
+  docs:
+    name: Docs are up to date
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/nix
+      - run: nix develop -c python tools/build_docs.py --check
+
+  flake:
+    name: Flake evaluates
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/nix
+      # Evaluates every output without building any: the checks it defines are
+      # the same tools the jobs above run
+      - run: nix flake check --no-build
+
+  check:
+    runs-on: ubuntu-latest
+    needs: [ruff, format, mypy, tests, docs, flake]
+    if: ${{ always() }}
+    steps:
+      - name: Every job passed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
         run: |
-          nix develop -c ruff check --output-format=github .
-          nix develop -c ruff format --check tests
-      - name: Types (mypy)
-        run: nix develop -c mypy src/daw
-      - name: Tests and coverage (pytest)
-        run: nix develop -c pytest -p no:cacheprovider
-      - name: Docs are up to date
-        run: nix develop -c python tools/build_docs.py --check
-      - name: Flake check
-        run: nix flake check --print-build-logs
+          echo "job results: $RESULTS"
+          for result in $RESULTS; do
+            [ "$result" = success ] || exit 1
+          done

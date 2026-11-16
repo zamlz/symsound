@@ -142,9 +142,13 @@ pip install -e '.[develop]'
 Tool settings live in `pyproject.toml` (ruff, mypy, pytest).
 
 `nix flake check` runs the tests, ruff, mypy and the docs check in the Nix
-sandbox. GitHub Actions runs it on every push to `main` and every pull request
-(`.github/workflows/ci.yml`); the slow mutation check runs nightly and on demand from
-the Actions tab (`mutation.yml`).
+sandbox. GitHub Actions (`.github/workflows/ci.yml`) runs the same tools on every
+push to `main` and every pull request, each as its own job so they run side by
+side: ruff check, ruff format, mypy, pytest (spread over the CPUs with
+pytest-xdist) and the docs check, plus a cheap evaluation of the flake. A final
+`check` job passes only when all of them did, and is the one the rules on `main`
+require. The slow mutation check runs nightly and on demand from the Actions tab
+(`mutation.yml`).
 
 Every change, new feature and fixed bug needs rigorous tests. The standard,
 per-feature checklists and conventions are in [guidelines.md](guidelines.md).

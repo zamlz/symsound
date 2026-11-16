@@ -62,7 +62,7 @@ dependencies, ruff and `PYTHONPATH=src`.
 
 | Task                                | Command                                                                                |
 | ----------------------------------- | -------------------------------------------------------------------------------------- |
-| Everything CI runs                  | `nix flake check`                                                                      |
+| Everything CI runs                  | `nix flake check` (CI runs the same tools as parallel jobs, see `ci.yml`)               |
 | One check                           | `nix build .#checks.x86_64-linux.pytest` (or `ruff`, `mypy`)                           |
 | Tests (fast loop)                   | `nix develop -c pytest`                                                                |
 | Tests without the slow example runs | `nix develop -c pytest -m "not slow"`                                                  |

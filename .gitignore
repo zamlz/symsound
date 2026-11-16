@@ -1,6 +1,7 @@
 *.wav
 result
-.coverage
+.coverage*
+htmlcov/
 .hypothesis/
 .pytest_cache/
 __pycache__/
