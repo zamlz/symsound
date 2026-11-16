@@ -21,9 +21,15 @@ Usage:
 copy and compares text and images with the committed files. A block that raises
 is also a failure, because `md` records a traceback as the block's output and
 exits successfully.
+
+Images are compared by what they look like, not byte for byte. The same graph
+drawn on two machines differs by a shade in a few edge pixels (the arithmetic
+rounds differently), so identical files are not to be expected. See
+`image_difference`.
 """
 
 import argparse
+import io
 import os
 import shutil
 import subprocess
@@ -31,6 +37,10 @@ import sys
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+
+import numpy as np
+from PIL import Image, UnidentifiedImageError
+from scipy.signal import convolve2d
 
 ROOT = Path(__file__).resolve().parent.parent
 FAILURE_MARKERS = ("Traceback (most recent call last)", "Error: Code execution")
@@ -118,6 +128,52 @@ def referenced_images(docs):
     return names
 
 
+# How different two renderings of the same graph may be. Measured on every image
+# that differs between a Mac and a Linux machine: no pixel was off by more than 2
+# (of 255), and the sum of the differences in any 5x5 window was at most 10. A real
+# change, such as moved text, a different colour or a missing label, scores
+# many times more. The limits sit between the two.
+MAX_PIXEL_DIFFERENCE = 3
+MAX_CLUSTER = 25
+CLUSTER_KERNEL = np.ones((5, 5))
+
+
+def image_difference(old, new):
+    """Why two PNG images (as bytes) are not the same picture, or None if they are.
+
+    Identical files are the same. Otherwise they must be the same size, no pixel
+    may differ by more than MAX_PIXEL_DIFFERENCE in any colour channel, and the
+    differences must not cluster: the kernel of ones in CLUSTER_KERNEL is passed
+    over the difference image, which adds up the differences in every 5x5 window,
+    and no window may add up to more than MAX_CLUSTER. A few stray pixels that
+    each differ by one are rounding. Many that differ close together are a
+    change, and the window adds them up.
+
+    Bytes that are not an image are compared as bytes."""
+    if old == new:
+        return None
+    try:
+        before = np.asarray(Image.open(io.BytesIO(old)).convert("RGBA"), dtype=int)
+        after = np.asarray(Image.open(io.BytesIO(new)).convert("RGBA"), dtype=int)
+    except (UnidentifiedImageError, OSError):
+        return "the files differ"
+    if before.shape != after.shape:
+        old_size = f"{before.shape[1]}x{before.shape[0]}"
+        new_size = f"{after.shape[1]}x{after.shape[0]}"
+        return f"the size changed from {old_size} to {new_size}"
+    difference = np.abs(before - after).max(axis=2).astype(float)
+    largest = int(difference.max())
+    if largest > MAX_PIXEL_DIFFERENCE:
+        return f"a pixel differs by {largest} (at most {MAX_PIXEL_DIFFERENCE} allowed)"
+    cluster = float(convolve2d(difference, CLUSTER_KERNEL, mode="same").max())
+    if cluster > MAX_CLUSTER:
+        return (
+            f"the differences cluster: {cluster:.0f} in a 5x5 window "
+            f"(at most {MAX_CLUSTER} allowed)"
+        )
+    return None
+
+
 def differences(committed, rebuilt):
     problems = []
     for page in sorted(committed.glob("*.md")):
@@ -137,8 +193,10 @@ def differences(committed, rebuilt):
             problems.append(f"{name}: referenced but no block draws it")
         elif not old.exists():
             problems.append(f"{name}: not committed")
-        elif old.read_bytes() != new.read_bytes():
-            problems.append(f"{name}: the image is out of date")
+        else:
+            reason = image_difference(old.read_bytes(), new.read_bytes())
+            if reason is not None:
+                problems.append(f"{name}: the image is out of date ({reason})")
     present = {f"img/{p.name}" for p in (committed / "img").glob("*.png")}
     for name in sorted(present - expected):
         problems.append(f"{name}: no page uses this image")
