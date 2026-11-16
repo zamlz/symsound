@@ -25,8 +25,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from hypothesis import given
-from hypothesis import strategies as st
 from PIL import Image
 
 from test_policy import public_api
@@ -449,136 +447,6 @@ def nudged(pixels, rows, columns, amount):
     return out
 
 
-class TestImageDifference:
-    """Two drawings of one graph by different machines differ by rounding in a
-    few edge pixels; a real change does not look like that"""
-
-    @pytest.fixture
-    def tool(self):
-        return load_build_docs()
-
-    def test_the_same_file_is_the_same_picture(self, tool):
-        data = png(drawing())
-        assert tool.image_difference(data, data) is None
-
-    def test_the_same_pixels_saved_differently_are_the_same_picture(self, tool):
-        pixels = drawing()
-        fast, small = png(pixels, compression=1), png(pixels, compression=9)
-        assert fast != small
-        assert tool.image_difference(fast, small) is None
-
-    def test_scattered_single_shades_of_rounding_are_the_same_picture(self, tool):
-        pixels = drawing(846, 392)
-        rng = np.random.default_rng(0)
-        noisy = pixels.copy()
-        # As many pixels as the worst measured pair (745), each off by one shade
-        rows = rng.integers(0, 392, 745)
-        columns = rng.integers(0, 846, 745)
-        noisy[rows, columns] = np.clip(noisy[rows, columns] - 1, 0, 255)
-        assert tool.image_difference(png(pixels), png(noisy)) is None
-
-    def test_the_limits_are_where_the_measured_rounding_noise_is_below_them(self, tool):
-        # Measured over every image that differs between a Mac and Linux: no pixel
-        # off by more than 2, and no 5x5 window adding up to more than 10
-        assert tool.MAX_PIXEL_DIFFERENCE >= 2
-        assert tool.MAX_CLUSTER >= 10
-        assert tool.CLUSTER_KERNEL.shape == (5, 5)
-        assert (tool.CLUSTER_KERNEL == 1).all()
-
-    def test_a_window_full_of_single_shades_is_at_the_limit_and_allowed(self, tool):
-        pixels = drawing()
-        block = nudged(pixels, slice(40, 45), slice(20, 25), -1)  # 25 pixels
-        assert tool.image_difference(png(pixels), png(block)) is None
-
-    def test_a_window_of_larger_shades_is_a_change(self, tool):
-        pixels = drawing()
-        block = nudged(pixels, slice(40, 45), slice(20, 25), -2)  # 25 x 2 = 50
-        reason = tool.image_difference(png(pixels), png(block))
-        assert "cluster" in reason
-        assert "50" in reason
-
-    def test_a_small_block_of_bigger_shades_adds_up_to_a_change(self, tool):
-        pixels = drawing()
-        block = nudged(pixels, slice(40, 43), slice(20, 23), -3)  # 9 x 3 = 27
-        assert "cluster" in tool.image_difference(png(pixels), png(block))
-
-    def test_the_same_shades_spread_apart_do_not_add_up(self, tool):
-        # 25 pixels of 1 each, but six apart: no window holds more than one
-        pixels = drawing(120, 80)
-        spread = pixels.copy()
-        for row in range(5, 80, 15):
-            for column in range(5, 120, 24):
-                spread[row, column] = np.clip(spread[row, column] - 1, 0, 255)
-        assert tool.image_difference(png(pixels), png(spread)) is None
-
-    def test_a_clustered_difference_is_caught_that_a_biggest_pixel_test_misses(
-        self, tool
-    ):
-        # Every pixel of a 6x6 patch is off by 3: each is within the per-pixel
-        # limit, but together they are a visible change
-        pixels = drawing()
-        block = nudged(pixels, slice(40, 46), slice(20, 26), -3)
-        assert tool.image_difference(png(pixels), png(block)) is not None
-
-    @given(
-        st.integers(0, 79), st.integers(0, 119), st.integers(-3, 3), st.integers(0, 2)
-    )
-    def test_one_pixel_off_by_up_to_three_shades_is_allowed(
-        self, row, column, amount, channel
-    ):
-        tool = load_build_docs()
-        pixels = np.full((80, 120, 3), 128)
-        changed = pixels.copy()
-        changed[row, column, channel] = np.clip(
-            changed[row, column, channel] + amount, 0, 255
-        )
-        assert tool.image_difference(png(pixels), png(changed)) is None
-
-    @pytest.mark.parametrize("amount", [4, 10, 255])
-    def test_one_pixel_off_by_more_than_three_shades_is_a_change(self, tool, amount):
-        pixels = np.zeros((40, 40, 3))
-        changed = pixels.copy()
-        changed[20, 20, 1] += amount
-        reason = tool.image_difference(png(pixels), png(changed))
-        assert f"a pixel differs by {amount}" in reason
-
-    def test_text_moved_by_one_pixel_is_a_change(self, tool):
-        pixels = drawing()
-        moved = pixels.copy()
-        moved[50:70, 60:110] = np.roll(pixels[50:70, 60:110], 1, axis=1)
-        assert tool.image_difference(png(pixels), png(moved)) is not None
-
-    def test_a_different_size_is_a_change(self, tool):
-        reason = tool.image_difference(png(drawing(120, 80)), png(drawing(121, 80)))
-        assert "size changed from 120x80 to 121x80" in reason
-
-    def test_the_transparency_counts_too(self, tool):
-        pixels = np.dstack([drawing(), np.full((80, 120), 255)])
-        changed = pixels.copy()
-        changed[30, 30, 3] = 100
-        assert "a pixel differs by 155" in tool.image_difference(
-            png(pixels), png(changed)
-        )
-
-    def test_bytes_that_are_not_images_are_compared_as_bytes(self, tool):
-        assert tool.image_difference(b"not an image", b"not an image") is None
-        assert tool.image_difference(b"one", b"two") == "the files differ"
-
-    @given(st.integers(0, 2**32 - 1), st.integers(1, 40))
-    def test_it_does_not_matter_which_picture_is_which(self, seed, count):
-        tool = load_build_docs()
-        rng = np.random.default_rng(seed)
-        pixels = rng.integers(0, 256, (16, 16, 3))
-        changed = pixels.copy()
-        rows, columns = rng.integers(0, 16, count), rng.integers(0, 16, count)
-        changed[rows, columns] = np.clip(
-            changed[rows, columns] + rng.integers(-5, 6, (count, 3)), 0, 255
-        )
-        forwards = tool.image_difference(png(pixels), png(changed))
-        backwards = tool.image_difference(png(changed), png(pixels))
-        assert (forwards is None) == (backwards is None)
-
-
 class TestImagesInTheCheck:
     @pytest.fixture
     def tool(self):
@@ -590,25 +458,20 @@ class TestImagesInTheCheck:
         (root / "img" / "a.png").write_bytes(png(pixels))
         return root
 
-    def test_an_image_that_differs_by_rounding_is_up_to_date(self, tool, tmp_path):
-        pixels = drawing()
-        rounded = nudged(pixels, slice(30, 31), slice(30, 40), -1)
-        old = self.tree(tmp_path / "old", pixels)
-        new = self.tree(tmp_path / "new", rounded)
+    def test_an_identical_image_is_up_to_date(self, tool, tmp_path):
+        old = self.tree(tmp_path / "old", drawing())
+        new = self.tree(tmp_path / "new", drawing())
         assert tool.differences(old, new) == []
 
-    def test_an_image_that_really_changed_is_reported_with_the_reason(
-        self, tool, tmp_path
-    ):
+    def test_an_image_that_differs_at_all_is_out_of_date(self, tool, tmp_path):
+        # Images are compared byte for byte: the runner's drawing is the baseline,
+        # so even one shade in one pixel is a difference
         pixels = drawing()
         old = self.tree(tmp_path / "old", pixels)
         new = self.tree(
-            tmp_path / "new", nudged(pixels, slice(40, 46), slice(20, 26), -60)
+            tmp_path / "new", nudged(pixels, slice(30, 31), slice(30, 40), -1)
         )
-        problems = tool.differences(old, new)
-        assert len(problems) == 1
-        assert problems[0].startswith("img/a.png: the image is out of date (")
-        assert "pixel differs by 60" in problems[0]
+        assert tool.differences(old, new) == ["img/a.png: the image is out of date"]
 
 
 class TestShowingImages:
@@ -629,22 +492,19 @@ class TestShowingImages:
                 (root / side / "img" / f"{name}.png").write_bytes(png(pixels))
         return root / "old", root / "new"
 
-    def test_only_the_images_that_are_not_the_same_picture_are_listed(
-        self, tool, tmp_path
-    ):
-        same, rounded, changed = drawing(), drawing(), drawing()
-        rounded = nudged(rounded, slice(30, 31), slice(30, 40), -1)
-        changed = nudged(changed, slice(40, 46), slice(20, 26), -60)
+    def test_only_the_images_that_differ_are_listed(self, tool, tmp_path):
         old, new = self.trees(
             tmp_path,
-            {"same": drawing(), "rounded": drawing(), "changed": drawing()},
-            {"same": same, "rounded": rounded, "changed": changed},
+            {"same": drawing(), "off_by_one": drawing(), "changed": drawing()},
+            {
+                "same": drawing(),
+                "off_by_one": nudged(drawing(), slice(30, 31), slice(30, 40), -1),
+                "changed": nudged(drawing(), slice(40, 46), slice(20, 26), -60),
+            },
         )
-        assert tool.stale_images(old, new) == ["img/changed.png"]
+        assert tool.stale_images(old, new) == ["img/changed.png", "img/off_by_one.png"]
 
-    def test_nothing_is_listed_when_every_image_is_the_same_picture(
-        self, tool, tmp_path
-    ):
+    def test_nothing_is_listed_when_every_image_is_identical(self, tool, tmp_path):
         old, new = self.trees(tmp_path, {"a": drawing()}, {"a": drawing()})
         assert tool.stale_images(old, new) == []
         assert tool.encoded_images(new, []) == []
