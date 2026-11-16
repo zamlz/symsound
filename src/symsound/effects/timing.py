@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """Time effects built from one idea: a signal, later.
 
 `delay(signal, seconds)` is the signal as it was `seconds` ago, and silence

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 from enum import Enum
 
 DEFAULT_SAMPLE_RATE = 44100

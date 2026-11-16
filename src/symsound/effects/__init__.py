@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """Effects: functions from signals to signals, all plain expressions of `TIME`.
 
 * `timing`: `delay`, a signal later (echo and reverb are sums of delays; see

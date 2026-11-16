@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """StereoExpr: two signals, one for each ear.
 
 A mono signal is one expression of `TIME`. A stereo signal is a `StereoExpr`, a pair

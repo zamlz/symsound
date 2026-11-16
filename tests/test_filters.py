@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """The low-pass filter is a first-order (RC) filter evaluated on the sample
 grid, so it works on any signal: sines, square waves, noise, envelopes,
 shifted notes.

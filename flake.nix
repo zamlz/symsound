@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -27,6 +29,7 @@
       pygame-ce
       pytest
       pytest-cov
+      pytest-xdist
       scipy
       sounddevice
       soundfile
@@ -36,6 +39,10 @@
   {
     devShells = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
+      # Lets the scripts in examples/ import the symsound package
+      shellHook = ''
+        export PYTHONPATH="$PWD/src''${PYTHONPATH:+:$PYTHONPATH}"
+      '';
     in {
       default = pkgs.mkShell {
         packages = [
@@ -43,10 +50,16 @@
           pkgs.ruff
           mdutils.packages.${system}.default
         ];
-        # Lets the scripts in examples/ import the symsound package
-        shellHook = ''
-          export PYTHONPATH="$PWD/src''${PYTHONPATH:+:$PYTHONPATH}"
-        '';
+        inherit shellHook;
+      };
+      # What CI uses for everything except the docs: the same, without `md`,
+      # which is built from source and only the docs need
+      ci = pkgs.mkShell {
+        packages = [
+          (pythonEnv pkgs)
+          pkgs.ruff
+        ];
+        inherit shellHook;
       };
     });
 

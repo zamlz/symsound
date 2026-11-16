@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """plot() options and spectrogram(): the figures used throughout docs/
 
 The existing plot() behavior is covered in test_utils.py and must not change.

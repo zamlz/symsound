@@ -62,7 +62,7 @@ dependencies, ruff and `PYTHONPATH=src`.
 
 | Task                                | Command                                                                                |
 | ----------------------------------- | -------------------------------------------------------------------------------------- |
-| Everything CI runs                  | `nix flake check`                                                                      |
+| Everything CI runs                  | `nix flake check` (CI runs the same tools as parallel jobs, see `ci.yml`)               |
 | One check                           | `nix build .#checks.x86_64-linux.pytest` (or `ruff`, `mypy`)                           |
 | Tests (fast loop)                   | `nix develop -c pytest`                                                                |
 | Tests without the slow example runs | `nix develop -c pytest -m "not slow"`                                                  |
@@ -352,7 +352,11 @@ plays. It is small, yet any audible change shifts it.
 - a public function or class in `src/symsound` is not referenced by any test;
 - an example script has no tests or an audible example has no golden file;
 - an `xfail` is not `strict=True`;
-- a test is skipped unconditionally.
+- a test is skipped unconditionally;
+- a source file (Python under `src`, `tests`, `examples` and `tools`, and
+  `flake.nix`) does not start with the license header: an optional shebang,
+  then `# SPDX-License-Identifier: GPL-3.0-or-later` and a `# Copyright (C)`
+  line. Put it on every new file.
 
 Coverage: `pyproject.toml` sets `fail_under = 100` for line and branch
 coverage of `symsound`. If a new branch is uncovered, add a test for it. Do not
@@ -402,6 +406,8 @@ nix develop -c python tools/mutation_check.py
   Do not mix a reformat of `src/` into a functional change.
 - **mypy** checks `src/symsound`. New code in `src/symsound` is typed.
 - Match the surrounding code: naming, comments, and idiom.
+- Every source file starts with the license header (section 9); copy it from
+  any existing file. The project is GPL-3.0-or-later, see `LICENSE`.
 - Example scripts may have unused imports (`examples/*.py` is exempt from
   `F401`/`E402`). The library may not.
 - **Python 3.14** is the supported floor (`requires-python`). The flake uses

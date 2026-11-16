@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """Effects that place a sound between the ears.
 
 These turn a mono signal into a `StereoExpr` (see `symsound.stereo`). Like every

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """Drawing shared by the windows (`visualize` and `keyboard`).
 
 Private: the names here are not part of the library's API. The scope and the

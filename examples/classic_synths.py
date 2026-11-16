@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 
 from symsound.envelope import ACTIVE_DURATION, adsr_envelope
 from symsound.filters import low_pass_filter

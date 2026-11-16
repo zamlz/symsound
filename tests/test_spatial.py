@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """pan: placing a mono signal between the ears by an angle (symsound.effects.spatial)"""
 
 import numpy as np

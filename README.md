@@ -21,10 +21,53 @@ save or plot it.
 
 ```python
 from symsound.waves.basic import sine
+from symsound.waves.utils import compile, plot
+
+tone = sine(440) * 0.5
+samples = compile(tone, duration=1.0)
+print(samples.shape, round(float(samples.max()), 3))
+plot(tone, duration=0.01, title="sine(440) * 0.5",
+     output_file="docs/img/readme-tone.png")
+```
+<!-- md-code: id="readme-tone"; bin="python3" -->
+
+Output:
+```
+(44100,) 0.5
+
+```
+<!-- md-code-output: id="readme-tone" -->
+
+![A 440 Hz sine at half volume](docs/img/readme-tone.png)
+
+To hear it, `play` it:
+
+```python no-run
+from symsound.waves.basic import sine
 from symsound.waves.utils import play
 
-play(sine(440), duration=2.0)
+play(sine(440) * 0.5, duration=2.0)
 ```
+
+<!-- md-toc: -->
+- [Why this exists](#why-this-exists)
+- [How it works](#how-it-works)
+- [Running the examples](#running-the-examples)
+- [Documentation](#documentation)
+- [Development](#development)
+- [Known limitations](#known-limitations)
+- [License](#license)
+<!-- md-toc: end -->
+
+## Why this exists
+
+SymSound was written to explore how audio works under the hood, at a mathematical
+level: a sound is a function of time, an envelope is a piece of algebra, a
+filter is a differential equation, and an echo is a sum of delays. It is a place
+to read, run and change those ideas, and it favours being clear over being fast.
+It is a learning project, not a tool for making audio in practice.
+
+It was written with AI assistance (Claude Code).
 
 ## How it works
 
@@ -37,39 +80,40 @@ Frequencies may themselves be expressions (e.g. `sine(440 + 5 * sine(6))`).
 The phase is obtained by integrating the frequency over `TIME`, so frequency
 modulation stays correct.
 
+## Running the examples
+
+```sh
+python examples/house.py
+python examples/house_with_low_pass.py
+python examples/ode_to_joy.py
+python examples/echo_pulse.py       # asks how many seconds between the echoes
+python examples/echo_melody.py      # three plucks: dry, with an echo, in a room
+python examples/stereo_pan.py       # three plucks placed left, centre and right; a bouncing echo; a sweep
+python examples/keyboard_synth.py   # a playable instrument (needs the gui extra)
+```
+
+The dev shell puts `src/` on `PYTHONPATH`. Outside it, install the package with
+`pip install -e .` first.
+
+Playback needs [PortAudio](https://www.portaudio.com) via `sounddevice`.
+`sounddevice` is only imported when `play` is called, so compiling, saving and
+the test suite work on machines without an audio backend.
+
 ## Documentation
 
 See [docs/](docs/README.md) for how to use each piece, with graphs of the
 signals and a line-by-line walkthrough of `examples/house.py`. The code blocks
-in the docs are run by [mdutils](https://github.com/zamlz/mdutils) (`md`,
-provided by the dev shell), which also draws the graphs:
+in the docs, and the one above, are run by
+[mdutils](https://github.com/zamlz/mdutils) (`md`, provided by the dev shell),
+which also draws the graphs:
 
 ```sh
 nix develop -c python tools/build_docs.py          # regenerate output and graphs
 nix develop -c python tools/build_docs.py --check  # fail if they are stale
 ```
 
-## Layout
-
-| Path | Contents |
-| --- | --- |
-| `src/symsound/constants.py` | `Note` frequency table, default sample rate |
-| `src/symsound/waves/basic.py` | `sine`, `square`, `triangle`, `sawtooth`, `trigger` |
-| `src/symsound/waves/time.py` | `TIME` symbol and the `BPM` helper |
-| `src/symsound/waves/utils.py` | `compile`, `play`, `save`, `plot`, `WHITE_NOISE` |
-| `src/symsound/envelope.py` | `adsr_envelope` and the `ACTIVE_DURATION` symbol |
-| `src/symsound/filters.py` | First-order low-pass filter, applied on the sample grid |
-| `src/symsound/effects/` | `delay` (a signal, later: echo and reverb are sums of delays) in `timing.py`, `pan` in `spatial.py` |
-| `src/symsound/stereo.py` | `StereoExpr`, a left and a right signal, and `mono_to_stereo` |
-| `src/symsound/keyboard.py` | `keyboard`: play a signal with your computer's keys, with a scope and a spectrogram |
-| `src/symsound/visualizer.py` | `visualize`: a window that plays a signal and shows it (needs `pip install 'symsound[gui]'`) |
-| `src/symsound/analysis.py` | The numbers behind the spectrogram and the overview, with no GUI |
-| `src/symsound/live.py` | Real-time engine: notes rendered in pieces, mixed and sent to the speakers |
-| `docs/` | How to use the library, with graphs; the code blocks are executed |
-| `examples/` | Example scripts (`house.py`, `house_with_low_pass.py`, ...) |
-| `tests/` | Pytest suite, golden files and guard tests |
-| `tools/` | `mutation_check.py` (proves the tests catch bugs), `build_docs.py` (runs the docs) |
-| `guidelines.md` | How we design, test, lint and commit, and the principles behind the library. Read before contributing |
+How the source code is organised is described in [guidelines.md](guidelines.md)
+(section 3, "Project layout").
 
 ## Development
 
@@ -99,31 +143,16 @@ pip install -e '.[develop]'
 Tool settings live in `pyproject.toml` (ruff, mypy, pytest).
 
 `nix flake check` runs the tests, ruff, mypy and the docs check in the Nix
-sandbox. GitHub Actions runs it on every push to `main` and every pull request
-(`.github/workflows/ci.yml`); the slow mutation check runs nightly and on demand from
-the Actions tab (`mutation.yml`).
+sandbox. GitHub Actions (`.github/workflows/ci.yml`) runs the same tools on every
+push to `main` and every pull request, each as its own job so they run side by
+side: ruff check, ruff format, mypy, pytest (spread over the CPUs with
+pytest-xdist) and the docs check, plus a cheap evaluation of the flake. A final
+`check` job passes only when all of them did, and is the one the rules on `main`
+require. The slow mutation check runs nightly and on demand from the Actions tab
+(`mutation.yml`).
 
 Every change, new feature and fixed bug needs rigorous tests. The standard,
 per-feature checklists and conventions are in [guidelines.md](guidelines.md).
-
-## Running the examples
-
-```sh
-python examples/house.py
-python examples/house_with_low_pass.py
-python examples/ode_to_joy.py
-python examples/echo_pulse.py       # asks how many seconds between the echoes
-python examples/echo_melody.py      # three plucks: dry, with an echo, in a room
-python examples/stereo_pan.py       # three plucks placed left, centre and right; a bouncing echo; a sweep
-python examples/keyboard_synth.py   # a playable instrument (needs the gui extra)
-```
-
-The dev shell puts `src/` on `PYTHONPATH`. Outside it, install the package with
-`pip install -e .` first.
-
-Playback needs [PortAudio](https://www.portaudio.com) via `sounddevice`.
-`sounddevice` is only imported when `play` is called, so compiling, saving and
-the test suite work on machines without an audio backend.
 
 ## Known limitations
 
@@ -132,3 +161,9 @@ the test suite work on machines without an audio backend.
   time, and the filter starts at rest at the first sample.
 - White noise is a single shared symbol, so every use of `WHITE_NOISE` in one
   expression sees the same samples.
+
+## License
+
+SymSound is free software under the GNU General Public License, version 3 or (at
+your option) any later version. See [LICENSE](LICENSE). It comes with no
+warranty.

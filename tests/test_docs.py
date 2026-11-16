@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """The documentation in docs/ is tested like code
 
 docs/ pages are processed by `md` (github.com/zamlz/mdutils): python blocks
@@ -17,6 +19,7 @@ import re
 import shutil
 import subprocess
 import sys
+import threading
 from pathlib import Path
 
 import pytest
@@ -73,6 +76,17 @@ class TestCodeBlocks:
             assert code.strip() in KICK, (
                 f"{page.name}: a python block is neither run by md (add an "
                 f"md-code comment), quoted from examples/house.py, nor marked "
+                f"`python no-run`:\n{code}"
+            )
+
+    def test_every_python_block_in_the_readme_is_executed_or_marked_no_run(self):
+        # The README is built with the docs, so a block that is neither run by md
+        # nor marked `python no-run` would show code nobody ever checks
+        blocks = python_blocks(ROOT / "README.md")
+        assert blocks
+        for info, code, fields in blocks:
+            assert fields is not None or "no-run" in info, (
+                f"README.md: a python block is neither run by md nor marked "
                 f"`python no-run`:\n{code}"
             )
 
@@ -263,6 +277,142 @@ class TestBuildDocsTool:
         problems = "\n".join(tool.differences(tmp_path / "old", tmp_path / "new"))
         assert "img/a.png: not committed" in problems
         assert "img/b.png: referenced but no block draws it" in problems
+
+    def readme_tree(self, root, readme, page="p.md"):
+        (root / "docs" / "img").mkdir(parents=True)
+        (root / "docs" / page).write_text("![a](img/a.png)\n")
+        (root / "docs" / "img" / "a.png").write_bytes(b"1")
+        (root / "README.md").write_text(readme)
+        return root / "docs"
+
+    def test_the_readme_is_built_with_the_docs_from_the_repository_root(
+        self, tool, tmp_path
+    ):
+        docs = self.readme_tree(tmp_path, "# symsound\n")
+        pages = tool.pages_of(docs)
+        assert [(page.name, folder) for page, folder in pages] == [
+            ("p.md", docs),
+            ("README.md", tmp_path),
+        ]
+
+    def test_there_is_no_readme_page_when_there_is_no_readme(self, tool, tmp_path):
+        docs = self.readme_tree(tmp_path, "x")
+        (tmp_path / "README.md").unlink()
+        assert [page.name for page, _ in tool.pages_of(docs)] == ["p.md"]
+
+    def test_images_the_readme_uses_count_as_used(self, tool, tmp_path):
+        docs = self.readme_tree(
+            tmp_path, "![t](docs/img/readme-tone.png) ![u](docs/img/u.png)\n"
+        )
+        assert tool.referenced_images(docs) == {
+            "img/a.png",
+            "img/readme-tone.png",
+            "img/u.png",
+        }
+
+    def test_a_readme_image_path_is_not_read_as_a_docs_image(self, tool, tmp_path):
+        docs = self.readme_tree(tmp_path, "![t](img/not-docs-relative.png)\n")
+        assert tool.referenced_images(docs) == {"img/a.png"}
+
+    def test_a_stale_readme_is_reported(self, tool, tmp_path):
+        old = self.readme_tree(tmp_path / "old", "old readme\n")
+        new = self.readme_tree(tmp_path / "new", "new readme\n")
+        problems = "\n".join(tool.differences(old, new))
+        assert "README.md: text is out of date" in problems
+
+    def test_an_up_to_date_readme_is_not_reported(self, tool, tmp_path):
+        old = self.readme_tree(tmp_path / "old", "same\n")
+        new = self.readme_tree(tmp_path / "new", "same\n")
+        assert tool.differences(old, new) == []
+
+    def test_a_readme_image_nobody_draws_is_reported(self, tool, tmp_path):
+        old = self.readme_tree(tmp_path / "old", "![t](docs/img/t.png)\n")
+        (old / "img" / "t.png").write_bytes(b"1")
+        new = self.readme_tree(tmp_path / "new", "![t](docs/img/t.png)\n")
+        problems = "\n".join(tool.differences(old, new))
+        assert "img/t.png: referenced but no block draws it" in problems
+
+    def fake_md(self, tool, monkeypatch, barrier=None):
+        """`md` replaced by something that marks what it was asked to do"""
+
+        def run(command, text, cwd):
+            if barrier is not None:
+                barrier.wait(timeout=10)
+            if command == "code":
+                return text + (
+                    "Traceback (most recent call last)\n" if "bad" in text else ""
+                )
+            return text + "<toc>\n"
+
+        monkeypatch.setattr(tool, "run_md", run)
+
+    def pages(self, root, names):
+        root.mkdir()
+        for name in names:
+            (root / f"{name}.md").write_text(f"page {name}\n")
+        return root
+
+    def test_build_rewrites_every_page_with_the_code_then_the_toc_step(
+        self, tool, tmp_path, monkeypatch
+    ):
+        self.fake_md(tool, monkeypatch)
+        docs = self.pages(tmp_path / "docs", ["a", "b", "c"])
+        assert tool.build(docs) == []
+        for name in "abc":
+            assert (docs / f"{name}.md").read_text() == f"page {name}\n<toc>\n"
+
+    def test_build_also_builds_the_readme_from_the_folder_above_docs(
+        self, tool, tmp_path, monkeypatch
+    ):
+        ran_in = []
+
+        def run(command, text, cwd):
+            ran_in.append((command, text.strip().split("\n")[0], cwd))
+            return text
+
+        monkeypatch.setattr(tool, "run_md", run)
+        docs = self.pages(tmp_path / "docs", ["a"])
+        (tmp_path / "README.md").write_text("readme\n")
+        assert tool.build(docs, workers=1) == []
+        assert ("code", "readme", tmp_path) in ran_in
+        assert ("toc", "readme", tmp_path) in ran_in
+        assert ("code", "page a", docs) in ran_in
+
+    def test_build_reports_a_failed_block_by_page_in_page_order(
+        self, tool, tmp_path, monkeypatch
+    ):
+        self.fake_md(tool, monkeypatch)
+        docs = self.pages(tmp_path / "docs", ["a", "bad-one", "c", "bad-two"])
+        problems = tool.build(docs)
+        assert [p.split(":")[0] for p in problems] == ["bad-one.md", "bad-two.md"]
+        assert all("Traceback (most recent call last)" in p for p in problems)
+
+    def test_build_runs_pages_side_by_side(self, tool, tmp_path, monkeypatch):
+        # Each fake md call waits for a second one, so this only finishes if two
+        # pages are being built at the same moment
+        self.fake_md(tool, monkeypatch, barrier=threading.Barrier(2))
+        docs = self.pages(tmp_path / "docs", ["a", "b"])
+        assert tool.build(docs, workers=2) == []
+
+    def test_build_with_one_worker_gives_the_same_result(
+        self, tool, tmp_path, monkeypatch
+    ):
+        self.fake_md(tool, monkeypatch)
+        names = ["a", "bad", "c"]
+        many = self.pages(tmp_path / "many", names)
+        one = self.pages(tmp_path / "one", names)
+        assert tool.build(many, workers=3) == tool.build(one, workers=1)
+        for name in names:
+            assert (many / f"{name}.md").read_text() == (one / f"{name}.md").read_text()
+
+    def test_a_failure_of_md_itself_stops_the_build(self, tool, tmp_path, monkeypatch):
+        def broken(command, text, cwd):
+            raise SystemExit("md code failed")
+
+        monkeypatch.setattr(tool, "run_md", broken)
+        docs = self.pages(tmp_path / "docs", ["a", "b"])
+        with pytest.raises(SystemExit, match="md code failed"):
+            tool.build(docs)
 
 
 @pytest.mark.slow

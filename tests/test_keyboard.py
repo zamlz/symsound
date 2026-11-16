@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """The playable keyboard: the key map, the piano drawing, input and sound
 
 Sound is measured: every key is played and the pitch that comes out is

@@ -7,6 +7,8 @@ name = "symsound"
 version = "0.1.0"
 requires-python = ">= 3.14"
 description = "A mathematical and programmatic audio engine"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 authors = [
     { name = "Amlesh Sivanantham", email = "zamlz+publict@pm.me" }
 ]
@@ -30,6 +32,7 @@ develop = [
   "mypy",
   "pytest",
   "pytest-cov",
+  "pytest-xdist",
   "ruff"
 ]
 

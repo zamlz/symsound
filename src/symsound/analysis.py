@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2024-2026 Amlesh Sivanantham
 """Looking at a signal: the numbers behind the spectrogram and the overview.
 
 These are plain NumPy, with no window or toolkit, so the same code draws a
