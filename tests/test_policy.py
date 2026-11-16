@@ -13,7 +13,7 @@ import pkgutil
 import re
 from pathlib import Path
 
-import daw
+import symsound
 
 TESTS = Path(__file__).parent
 ROOT = TESTS.parent
@@ -25,7 +25,7 @@ SOURCES = {
 def public_api():
     """(module, name) for every public function and class the package defines"""
     found = []
-    for info in pkgutil.walk_packages(daw.__path__, prefix="daw."):
+    for info in pkgutil.walk_packages(symsound.__path__, prefix="symsound."):
         module = importlib.import_module(info.name)
         for name, obj in vars(module).items():
             if name.startswith("_"):
@@ -109,8 +109,8 @@ def source_files():
 def test_every_source_file_is_found():
     names = {p.relative_to(ROOT).as_posix() for p in source_files()}
     assert {
-        "src/daw/__init__.py",
-        "src/daw/waves/utils.py",
+        "src/symsound/__init__.py",
+        "src/symsound/waves/utils.py",
         "tests/test_policy.py",
         "examples/house.py",
         "tools/build_docs.py",

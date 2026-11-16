@@ -7,11 +7,11 @@ from collections import defaultdict
 import numpy as np
 import sympy as sp
 
-from daw.constants import Note
-from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.waves.basic import sawtooth, sine, square, triangle, trigger
-from daw.waves.time import BPM, TIME
-from daw.waves.utils import play, save
+from symsound.constants import Note
+from symsound.envelope import ACTIVE_DURATION, adsr_envelope
+from symsound.waves.basic import sawtooth, sine, square, triangle, trigger
+from symsound.waves.time import BPM, TIME
+from symsound.waves.utils import play, save
 
 ode_to_joy_notes = [
     (Note.FS4, 0.5),

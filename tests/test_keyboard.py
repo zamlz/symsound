@@ -12,12 +12,12 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from daw import keyboard as keyboard_module
-from daw._draw import _inside
-from daw.analysis import LiveSpectrogram
-from daw.constants import Note
-from daw.envelope import adsr_envelope
-from daw.keyboard import (
+from symsound import keyboard as keyboard_module
+from symsound._draw import _inside
+from symsound.analysis import LiveSpectrogram
+from symsound.constants import Note
+from symsound.envelope import adsr_envelope
+from symsound.keyboard import (
     BLACK,
     BLACK_KEY,
     KEYS,
@@ -36,8 +36,8 @@ from daw.keyboard import (
     note_at,
     note_name,
 )
-from daw.live import Instrument, Mixer, RingBuffer
-from daw.waves.basic import sine
+from symsound.live import Instrument, Mixer, RingBuffer
+from symsound.waves.basic import sine
 
 RATE = 8000
 
@@ -672,7 +672,7 @@ class TestKeyboardFunction:
     def test_a_filtered_signal_is_refused_before_anything_opens(
         self, fake_sounddevice, opened
     ):
-        from daw.filters import low_pass_filter
+        from symsound.filters import low_pass_filter
 
         with pytest.raises(ValueError, match="filtered"):
             keyboard(lambda note: low_pass_filter(sine(note), 500), sample_rate=RATE)

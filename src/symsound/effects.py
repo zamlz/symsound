@@ -11,8 +11,8 @@ docs/effects.md for both, built from `delay`).
 import sympy as sp
 from sympy.core.expr import Expr
 
-from daw.filters import LowPass
-from daw.waves.time import TIME
+from symsound.filters import LowPass
+from symsound.waves.time import TIME
 
 
 def _shift(expression: Expr, seconds: Expr) -> Expr:

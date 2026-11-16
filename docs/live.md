@@ -10,7 +10,7 @@
 `compile` builds a whole signal at once, which is right for `play`, `save` and
 `plot`. A keyboard cannot wait for that: a note starts when a key goes down and
 ends when it comes up, and the sound card wants a few hundred samples at a
-time. `daw.live` is the engine for that. It does the slow symbolic work once,
+time. `symsound.live` is the engine for that. It does the slow symbolic work once,
 before any key is pressed, and after that makes sound with plain NumPy.
 
 | Name | What it is |
@@ -31,10 +31,10 @@ as rendering it whole:
 ```python
 import numpy as np
 
-from daw.envelope import adsr_envelope
-from daw.live import NoteSource
-from daw.waves.basic import sine
-from daw.waves.utils import compile
+from symsound.envelope import adsr_envelope
+from symsound.live import NoteSource
+from symsound.waves.basic import sine
+from symsound.waves.utils import compile
 
 rate = 8000
 note = sine(440) * adsr_envelope(0.02, 0.05, 0.6, 0.1)
@@ -66,10 +66,10 @@ samples of the mix:
 import matplotlib.pyplot as plt
 import numpy as np
 
-from daw.constants import Note
-from daw.envelope import adsr_envelope
-from daw.live import Instrument, Mixer
-from daw.waves.basic import sine
+from symsound.constants import Note
+from symsound.envelope import adsr_envelope
+from symsound.live import Instrument, Mixer
+from symsound.waves.basic import sine
 
 rate = 8000
 voice = Instrument(lambda note: sine(note) * adsr_envelope(0.02, 0.05, 0.6, 0.15), rate)
@@ -136,10 +136,10 @@ milliseconds per note, so compile before playing and not during it:
 ```python
 import time
 
-from daw.constants import Note
-from daw.envelope import adsr_envelope
-from daw.live import Instrument
-from daw.waves.basic import sine
+from symsound.constants import Note
+from symsound.envelope import adsr_envelope
+from symsound.live import Instrument
+from symsound.waves.basic import sine
 
 voice = Instrument(lambda note: sine(note) * adsr_envelope(0.01, 0.1, 0.7, 0.3))
 
@@ -172,10 +172,10 @@ scope or spectrogram reads. Use it as a context manager:
 ```python no-run
 import time
 
-from daw.constants import Note
-from daw.envelope import adsr_envelope
-from daw.live import Instrument, LiveOutput, Mixer, RingBuffer
-from daw.waves.basic import sine
+from symsound.constants import Note
+from symsound.envelope import adsr_envelope
+from symsound.live import Instrument, LiveOutput, Mixer, RingBuffer
+from symsound.waves.basic import sine
 
 voice = Instrument(lambda note: sine(note) * adsr_envelope(0.01, 0.1, 0.7, 0.3))
 voice.precompile([Note.A4])

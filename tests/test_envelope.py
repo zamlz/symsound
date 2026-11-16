@@ -6,9 +6,9 @@ import sympy as sp
 from hypothesis import assume, given
 from hypothesis import strategies as st
 
-from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.waves.time import TIME
 from helpers import ref_adsr
+from symsound.envelope import ACTIVE_DURATION, adsr_envelope
+from symsound.waves.time import TIME
 
 # Durations are either exactly zero (a degenerate stage) or clearly positive
 stage = st.one_of(st.just(0.0), st.floats(min_value=0.001, max_value=2))

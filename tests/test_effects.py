@@ -2,7 +2,7 @@
 # Copyright (C) 2024-2026 Amlesh Sivanantham
 """`delay` is a signal shifted later and silent before: a plain expression.
 
-References are independent of daw.effects: the signal's own reference
+References are independent of symsound.effects: the signal's own reference
 function evaluated at `t - seconds` (waves, envelopes), or the compiled
 samples of the undelayed signal moved along by whole samples (anything with a
 filter in it). The echo and reverb of docs/effects.md are built from `delay`
@@ -17,12 +17,6 @@ import sympy as sp
 from hypothesis import assume, given
 from hypothesis import strategies as st
 
-from daw.effects import delay
-from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.filters import low_pass_filter
-from daw.waves.basic import sawtooth, sine, square, triangle
-from daw.waves.time import TIME
-from daw.waves.utils import WHITE_NOISE, compile
 from helpers import (
     away_from_edges,
     evaluate,
@@ -31,6 +25,12 @@ from helpers import (
     ref_square,
     ref_triangle,
 )
+from symsound.effects import delay
+from symsound.envelope import ACTIVE_DURATION, adsr_envelope
+from symsound.filters import low_pass_filter
+from symsound.waves.basic import sawtooth, sine, square, triangle
+from symsound.waves.time import TIME
+from symsound.waves.utils import WHITE_NOISE, compile
 
 SR = 44100
 

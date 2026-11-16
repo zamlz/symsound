@@ -12,11 +12,11 @@ import math
 
 import sympy as sp
 
-from daw.effects import delay
-from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.waves.basic import sine
-from daw.waves.time import TIME
-from daw.waves.utils import play
+from symsound.effects import delay
+from symsound.envelope import ACTIVE_DURATION, adsr_envelope
+from symsound.waves.basic import sine
+from symsound.waves.time import TIME
+from symsound.waves.utils import play
 
 pulse_frequency = 440
 pulse_length = 0.1  # seconds the pulse is held, before its short fade

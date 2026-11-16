@@ -8,11 +8,11 @@
 <!-- md-toc: end -->
 
 A raw oscillator is a constant drone. An envelope shapes its loudness over the
-life of a note, from `daw.envelope`:
+life of a note, from `symsound.envelope`:
 
 ```python
-from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.waves.utils import plot
+from symsound.envelope import ACTIVE_DURATION, adsr_envelope
+from symsound.waves.utils import plot
 
 env = adsr_envelope(attack=0.1, decay=0.2, sustain=0.5, release=0.3)
 held = env.subs(ACTIVE_DURATION, 1.0)      # the note is held for one second
@@ -44,9 +44,9 @@ Multiply an oscillator by it to shape a note. The oscillator below is slow (30
 Hz) so the shape can be seen:
 
 ```python
-from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.waves.basic import sine
-from daw.waves.utils import plot
+from symsound.envelope import ACTIVE_DURATION, adsr_envelope
+from symsound.waves.basic import sine
+from symsound.waves.utils import plot
 
 env = adsr_envelope(0.1, 0.2, 0.5, 0.3).subs(ACTIVE_DURATION, 1.0)
 plot([sine(30), env, sine(30) * env], duration=1.6,
@@ -63,8 +63,8 @@ If the note is released early, in the middle of the attack or decay, the release
 starts from whatever level the envelope had reached:
 
 ```python
-from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.waves.utils import plot
+from symsound.envelope import ACTIVE_DURATION, adsr_envelope
+from symsound.waves.utils import plot
 
 env = adsr_envelope(0.1, 0.2, 0.5, 0.3)
 holds = [0.05, 0.2, 1.0]
@@ -84,8 +84,8 @@ is released part-way down the decay.
 Build the envelope once and fill in a different `ACTIVE_DURATION` for each use:
 
 ```python
-from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.waves.basic import sine
+from symsound.envelope import ACTIVE_DURATION, adsr_envelope
+from symsound.waves.basic import sine
 
 env = adsr_envelope(0.01, 0.1, 0.5, 0.2)
 short = sine(440) * env.subs(ACTIVE_DURATION, 0.25)

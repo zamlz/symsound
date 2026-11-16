@@ -1,4 +1,4 @@
-# daw
+# SymSound
 
 $$
 \begin{aligned}
@@ -15,13 +15,13 @@ $$
 
 A mathematical and programmatic audio engine. Signals are
 [SymPy](https://www.sympy.org) expressions of a single shared time symbol,
-`daw.waves.time.TIME`. Oscillators, envelopes, LFOs and time shifts are all
+`symsound.waves.time.TIME`. Oscillators, envelopes, LFOs and time shifts are all
 plain algebra, and an expression is only turned into samples when you play,
 save or plot it.
 
 ```python
-from daw.waves.basic import sine
-from daw.waves.utils import compile, plot
+from symsound.waves.basic import sine
+from symsound.waves.utils import compile, plot
 
 tone = sine(440) * 0.5
 samples = compile(tone, duration=1.0)
@@ -43,8 +43,8 @@ Output:
 To hear it, `play` it:
 
 ```python no-run
-from daw.waves.basic import sine
-from daw.waves.utils import play
+from symsound.waves.basic import sine
+from symsound.waves.utils import play
 
 play(sine(440) * 0.5, duration=2.0)
 ```
@@ -61,7 +61,7 @@ play(sine(440) * 0.5, duration=2.0)
 
 ## Why this exists
 
-`daw` was written to explore how audio works under the hood, at a mathematical
+SymSound was written to explore how audio works under the hood, at a mathematical
 level: a sound is a function of time, an envelope is a piece of algebra, a
 filter is a differential equation, and an echo is a sum of delays. It is a place
 to read, run and change those ideas, and it favours being clear over being fast.
@@ -137,7 +137,7 @@ pip install -e '.[develop]'
 | Run tests | `pytest` (add `-m "not slow"` to skip the examples) |
 | Lint | `ruff check .` |
 | Format | `ruff format tests` |
-| Type check | `mypy src/daw` |
+| Type check | `mypy src/symsound` |
 
 Tool settings live in `pyproject.toml` (ruff, mypy, pytest).
 
@@ -163,6 +163,6 @@ per-feature checklists and conventions are in [guidelines.md](guidelines.md).
 
 ## License
 
-`daw` is free software under the GNU General Public License, version 3 or (at
+SymSound is free software under the GNU General Public License, version 3 or (at
 your option) any later version. See [LICENSE](LICENSE). It comes with no
 warranty.

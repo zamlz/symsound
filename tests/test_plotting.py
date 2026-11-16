@@ -13,10 +13,10 @@ import numpy as np
 import pytest
 import sympy as sp
 
-from daw.filters import low_pass_filter
-from daw.waves.basic import sawtooth, sine, square, trigger
-from daw.waves.time import BPM, TIME
-from daw.waves.utils import compile, linspace, plot, spectrogram
+from symsound.filters import low_pass_filter
+from symsound.waves.basic import sawtooth, sine, square, trigger
+from symsound.waves.time import BPM, TIME
+from symsound.waves.utils import compile, linspace, plot, spectrogram
 
 SR = 1000
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"

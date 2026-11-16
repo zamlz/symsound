@@ -7,7 +7,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from daw.analysis import (
+from symsound.analysis import (
     HOP,
     WINDOW,
     LiveSpectrogram,
@@ -208,7 +208,7 @@ class TestPeakEnvelope:
 
 class TestLiveSpectrogram:
     def stream(self, capacity=16384):
-        from daw.live import RingBuffer
+        from symsound.live import RingBuffer
 
         return RingBuffer(capacity)
 

@@ -15,7 +15,7 @@ In this library a sound is not a list of samples. It is a mathematical
 expression of one symbol, `TIME`, the time in seconds:
 
 ```python
-from daw.waves.basic import sine
+from symsound.waves.basic import sine
 
 tone = sine(440)
 print(tone)
@@ -34,8 +34,8 @@ Nothing has been computed yet. Here are the first 5 milliseconds of it, drawn
 with `plot` (see [Playing, saving and plotting](output.md)):
 
 ```python
-from daw.waves.basic import sine
-from daw.waves.utils import plot
+from symsound.waves.basic import sine
+from symsound.waves.utils import plot
 
 plot(sine(440), duration=0.005, title="sine(440): two full cycles in 5 ms",
      output_file="img/concepts-sine-440.png")
@@ -51,8 +51,8 @@ oscillators (LFOs) work. The graphs below use slow frequencies (3 and 7 Hz) so
 you can see the shapes; the idea is the same at audio frequencies.
 
 ```python
-from daw.waves.basic import sine
-from daw.waves.utils import plot
+from symsound.waves.basic import sine
+from symsound.waves.utils import plot
 
 plot(
     [sine(3), 0.5 * sine(3), sine(3) + sine(7)],
@@ -71,8 +71,8 @@ Multiplying two signals is how you make the volume wobble (tremolo): the slow
 signal `0.6 + 0.4 * sine(2)` swings between 0.2 and 1.0 and scales the fast one.
 
 ```python
-from daw.waves.basic import sine
-from daw.waves.utils import plot
+from symsound.waves.basic import sine
+from symsound.waves.utils import plot
 
 wobble = 0.6 + 0.4 * sine(2)
 tremolo = sine(30) * wobble
@@ -91,14 +91,14 @@ sum down, for example `0.3 * (a + b + c)`.
 
 ## `TIME`
 
-`TIME` is one shared symbol, `daw.waves.time.TIME`. Every function in the
+`TIME` is one shared symbol, `symsound.waves.time.TIME`. Every function in the
 library builds its expressions from it, so they all line up on the same clock.
 Time zero is the start of the audio. You can use it directly: `TIME` on its own
 is a signal that rises by one every second, and `TIME ** 2` bends upward.
 
 ```python
-from daw.waves.time import TIME
-from daw.waves.utils import plot
+from symsound.waves.time import TIME
+from symsound.waves.utils import plot
 
 plot([TIME, TIME ** 2], duration=2.0, labels=["TIME", "TIME ** 2"],
      output_file="img/concepts-time.png")
@@ -112,8 +112,8 @@ plot([TIME, TIME ** 2], duration=2.0, labels=["TIME", "TIME ** 2"],
 An expression only becomes audio when you ask for it:
 
 ```python
-from daw.waves.basic import sine
-from daw.waves.utils import compile
+from symsound.waves.basic import sine
+from symsound.waves.utils import compile
 
 samples = compile(sine(440), duration=1.0)   # a NumPy array
 print(len(samples))                          # 44100 samples: one second at 44.1 kHz
@@ -135,13 +135,13 @@ it for you. See [Playing, saving and plotting](output.md).
 
 ## Noise
 
-`daw.waves.utils.WHITE_NOISE` is a second symbol. When compiled it becomes a
+`symsound.waves.utils.WHITE_NOISE` is a second symbol. When compiled it becomes a
 fresh random value in [-1, 1] for every sample:
 
 ```python
 import numpy as np
 
-from daw.waves.utils import WHITE_NOISE, plot
+from symsound.waves.utils import WHITE_NOISE, plot
 
 np.random.seed(0)    # makes the noise the same every run, so this graph is too
 plot(0.1 * WHITE_NOISE, duration=0.01, title="0.1 * WHITE_NOISE",
@@ -164,9 +164,9 @@ wins, and `True` means "otherwise".
 ```python
 import sympy as sp
 
-from daw.waves.basic import sine
-from daw.waves.time import TIME
-from daw.waves.utils import plot
+from symsound.waves.basic import sine
+from symsound.waves.time import TIME
+from symsound.waves.utils import plot
 
 # silent until one second, then a tone
 late_tone = sp.Piecewise(

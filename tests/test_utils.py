@@ -13,12 +13,13 @@ import sympy as sp
 from hypothesis import given
 from hypothesis import strategies as st
 
-import daw
-from daw.constants import DEFAULT_SAMPLE_RATE
-from daw.waves import utils
-from daw.waves.basic import sine, square
-from daw.waves.time import BPM, TIME
-from daw.waves.utils import (
+import symsound
+from helpers import evaluate
+from symsound.constants import DEFAULT_SAMPLE_RATE
+from symsound.waves import utils
+from symsound.waves.basic import sine, square
+from symsound.waves.time import BPM, TIME
+from symsound.waves.utils import (
     WHITE_NOISE,
     compile,
     linspace,
@@ -27,7 +28,6 @@ from daw.waves.utils import (
     save,
     white_noise,
 )
-from helpers import evaluate
 
 durations = st.floats(min_value=0, max_value=5, allow_nan=False)
 sample_rates = st.integers(min_value=1, max_value=48_000)
@@ -228,8 +228,8 @@ class TestPlay:
         # fresh interpreter with the import blocked.
         code = (
             "import sys; sys.modules['sounddevice'] = None\n"
-            "import daw.waves.utils as u\n"
-            "from daw.waves.basic import sine\n"
+            "import symsound.waves.utils as u\n"
+            "from symsound.waves.basic import sine\n"
             "u.compile(sine(440), 0.01, 8000)\n"
             "try:\n"
             "    u.play(sine(440), 0.01, 8000)\n"
@@ -238,7 +238,7 @@ class TestPlay:
         )
         # The child does not inherit pytest's `pythonpath` setting, so point
         # it at the package explicitly (the Nix sandbox sets no PYTHONPATH)
-        src = str(Path(daw.__file__).resolve().parents[1])
+        src = str(Path(symsound.__file__).resolve().parents[1])
         env = dict(os.environ)
         env["PYTHONPATH"] = os.pathsep.join(filter(None, [src, env.get("PYTHONPATH")]))
         result = subprocess.run(
