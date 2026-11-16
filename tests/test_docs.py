@@ -15,6 +15,7 @@ check, `docs`, because the pytest check has no md.
 import ast
 import builtins
 import importlib.util
+import io
 import re
 import shutil
 import subprocess
@@ -22,7 +23,9 @@ import sys
 import threading
 from pathlib import Path
 
+import numpy as np
 import pytest
+from PIL import Image
 
 from test_policy import public_api
 
@@ -413,6 +416,159 @@ class TestBuildDocsTool:
         docs = self.pages(tmp_path / "docs", ["a", "b"])
         with pytest.raises(SystemExit, match="md code failed"):
             tool.build(docs)
+
+
+def png(pixels, compression=6):
+    """The bytes of a PNG of an array of pixels (rows, columns, 3 or 4)"""
+    mode = "RGBA" if pixels.shape[2] == 4 else "RGB"
+    out = io.BytesIO()
+    Image.fromarray(pixels.astype(np.uint8), mode).save(
+        out, "PNG", compress_level=compression
+    )
+    return out.getvalue()
+
+
+def drawing(width=120, height=80):
+    """A white picture with a black rectangle, a diagonal line and some 'text'"""
+    pixels = np.full((height, width, 3), 255)
+    pixels[10:30, 10:50] = 0
+    for i in range(min(width, height)):
+        pixels[i, i] = 0
+    rng = np.random.default_rng(1)
+    pixels[50:70, 60:110] = np.where(rng.random((20, 50, 1)) < 0.5, 0, 255)
+    return pixels
+
+
+def nudged(pixels, rows, columns, amount):
+    """The picture with a block of it changed by `amount` in every channel (the
+    drawings are mostly white, so use a negative amount to see a change)"""
+    out = pixels.copy()
+    out[rows, columns] = np.clip(out[rows, columns] + amount, 0, 255)
+    return out
+
+
+class TestImagesInTheCheck:
+    @pytest.fixture
+    def tool(self):
+        return load_build_docs()
+
+    def tree(self, root, pixels):
+        (root / "img").mkdir(parents=True)
+        (root / "p.md").write_text("![a](img/a.png)\n")
+        (root / "img" / "a.png").write_bytes(png(pixels))
+        return root
+
+    def test_an_identical_image_is_up_to_date(self, tool, tmp_path):
+        old = self.tree(tmp_path / "old", drawing())
+        new = self.tree(tmp_path / "new", drawing())
+        assert tool.differences(old, new) == []
+
+    def test_an_image_that_differs_at_all_is_out_of_date(self, tool, tmp_path):
+        # Images are compared byte for byte: the runner's drawing is the baseline,
+        # so even one shade in one pixel is a difference
+        pixels = drawing()
+        old = self.tree(tmp_path / "old", pixels)
+        new = self.tree(
+            tmp_path / "new", nudged(pixels, slice(30, 31), slice(30, 40), -1)
+        )
+        assert tool.differences(old, new) == ["img/a.png: the image is out of date"]
+
+
+class TestShowingImages:
+    """When the check fails, the CI machine's images are printed so that they can
+    be recreated here"""
+
+    @pytest.fixture
+    def tool(self):
+        return load_build_docs()
+
+    def trees(self, root, committed, rebuilt):
+        for side, images in (("old", committed), ("new", rebuilt)):
+            (root / side / "img").mkdir(parents=True)
+            (root / side / "p.md").write_text(
+                "".join(f"![{n}](img/{n}.png)\n" for n in rebuilt)
+            )
+            for name, pixels in images.items():
+                (root / side / "img" / f"{name}.png").write_bytes(png(pixels))
+        return root / "old", root / "new"
+
+    def test_only_the_images_that_differ_are_listed(self, tool, tmp_path):
+        old, new = self.trees(
+            tmp_path,
+            {"same": drawing(), "off_by_one": drawing(), "changed": drawing()},
+            {
+                "same": drawing(),
+                "off_by_one": nudged(drawing(), slice(30, 31), slice(30, 40), -1),
+                "changed": nudged(drawing(), slice(40, 46), slice(20, 26), -60),
+            },
+        )
+        assert tool.stale_images(old, new) == ["img/changed.png", "img/off_by_one.png"]
+
+    def test_nothing_is_listed_when_every_image_is_identical(self, tool, tmp_path):
+        old, new = self.trees(tmp_path, {"a": drawing()}, {"a": drawing()})
+        assert tool.stale_images(old, new) == []
+        assert tool.encoded_images(new, []) == []
+
+    def test_an_image_missing_from_either_tree_is_not_listed(self, tool, tmp_path):
+        old, new = self.trees(tmp_path, {}, {"a": drawing()})
+        assert tool.stale_images(old, new) == []
+
+    def test_the_lines_are_base64_between_markers_with_the_size(self, tool, tmp_path):
+        _, new = self.trees(tmp_path, {"a": drawing()}, {"a": drawing()})
+        data = (new / "img" / "a.png").read_bytes()
+        lines = tool.encoded_images(new, ["img/a.png"])
+        assert lines[0] == f"=== begin base64 docs/img/a.png ({len(data)} bytes) ==="
+        assert lines[-1] == "=== end docs/img/a.png ==="
+        assert all(len(line) <= 76 for line in lines[1:-1])
+
+    def test_the_images_survive_the_trip_through_text(self, tool, tmp_path):
+        _, new = self.trees(
+            tmp_path,
+            {},
+            {"a": drawing(), "b": nudged(drawing(), slice(5, 9), slice(5, 9), -80)},
+        )
+        text = "\n".join(tool.encoded_images(new, ["img/a.png", "img/b.png"]))
+        target = tmp_path / "restored"
+        (target / "img").mkdir(parents=True)
+        assert tool.restore_images(text, target) == ["img/a.png", "img/b.png"]
+        for name in ("a", "b"):
+            assert (target / "img" / f"{name}.png").read_bytes() == (
+                new / "img" / f"{name}.png"
+            ).read_bytes()
+
+    def test_a_ci_log_with_a_timestamp_on_every_line_restores_the_same_images(
+        self, tool, tmp_path
+    ):
+        _, new = self.trees(tmp_path, {}, {"a": drawing()})
+        log = "\n".join(
+            [
+                "2026-11-16T01:46:04.1Z some other output",
+                *(
+                    f"2026-11-16T01:46:04.{i}Z {line}"
+                    for i, line in enumerate(tool.encoded_images(new, ["img/a.png"]))
+                ),
+                "2026-11-16T01:46:05.0Z ##[error]Process completed with exit code 1.",
+            ]
+        )
+        target = tmp_path / "restored"
+        (target / "img").mkdir(parents=True)
+        assert tool.restore_images(log, target) == ["img/a.png"]
+        assert (target / "img" / "a.png").read_bytes() == (
+            new / "img" / "a.png"
+        ).read_bytes()
+
+    def test_text_with_no_images_restores_nothing(self, tool, tmp_path):
+        assert (
+            tool.restore_images("nothing here\n=== end docs/img/a.png ===\n", tmp_path)
+            == []
+        )
+
+    def test_a_truncated_image_is_refused(self, tool, tmp_path):
+        _, new = self.trees(tmp_path, {}, {"a": drawing()})
+        lines = tool.encoded_images(new, ["img/a.png"])
+        del lines[2]  # one line of the data goes missing
+        with pytest.raises(SystemExit, match="expected"):
+            tool.restore_images("\n".join(lines), tmp_path)
 
 
 @pytest.mark.slow
