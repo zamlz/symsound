@@ -91,6 +91,7 @@ python examples/echo_melody.py      # three plucks: dry, with an echo, in a room
 python examples/stereo_placed.py     # three plucks: left, centre, right
 python examples/stereo_ping_pong.py  # an echo that bounces between the ears
 python examples/stereo_sweep.py      # a chord that sweeps from ear to ear
+python examples/stereo_phase_cancel.py  # two sines that cancel, in mono and in stereo
 python examples/keyboard_synth.py   # a playable instrument (needs the gui extra)
 ```
 

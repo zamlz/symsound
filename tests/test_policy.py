@@ -88,6 +88,7 @@ def test_golden_files_exist_for_every_audible_example():
         "house_with_low_pass",
         "keyboard_synth",
         "ode_to_joy",
+        "stereo_phase_cancel",
         "stereo_ping_pong",
         "stereo_placed",
         "stereo_sweep",

@@ -8,6 +8,7 @@
   - [An angle with no limit](#an-angle-with-no-limit)
 - [Effects on both sides: `map`](#effects-on-both-sides-map)
 - [Looking at a stereo signal](#looking-at-a-stereo-signal)
+- [Phase cancellation](#phase-cancellation)
 - [Examples to run](#examples-to-run)
 - [The limits](#the-limits)
 <!-- md-toc: end -->
@@ -348,20 +349,90 @@ spectrogram(pair, duration=1.0, channel="right", max_frequency=2000,
 
 ![The spectrogram of the right channel](img/stereo-spectrogram.png)
 
+## Phase cancellation
+
+Two sines of the same frequency add up according to their phase. If they line up
+(in phase) the sum is a bigger sine. If one is shifted by half a period, a phase
+shift of 180 degrees, it is the first one upside down, and the sum is zero. A
+shift in time is a shift in phase, so `sine(440, TIME - 1/880)` is a 440 Hz sine
+half a period late.
+
+```python
+import matplotlib.pyplot as plt
+import numpy as np
+
+from symsound.waves.basic import sine
+from symsound.waves.time import TIME
+from symsound.waves.utils import compile
+
+HALF_A_PERIOD = 1 / (2 * 440)  # seconds: half a cycle is 180 degrees
+
+first = 0.5 * sine(440)
+second = 0.5 * sine(440, TIME - HALF_A_PERIOD)
+total = first + second
+
+samples = {name: compile(signal, 1.0) for name, signal in
+           [("first", first), ("second, half a period late", second),
+            ("first + second", total)]}
+t = np.arange(44100) / 44100
+show = t < 0.01
+
+# One scale for all three, so a sum of zero looks like zero
+fig, axes = plt.subplots(3, 1, figsize=(10, 5), sharex=True, sharey=True)
+for ax, (name, wave) in zip(axes, samples.items(), strict=True):
+    ax.plot(t[show], wave[show])
+    ax.set_title(name, loc="left", fontsize=10)
+    ax.set_ylabel("Amplitude")
+    ax.set_ylim(-0.6, 0.6)
+    ax.grid(True)
+axes[0].set_title("Two sines 180 degrees apart add up to nothing")
+axes[-1].set_xlabel("Time [s]")
+fig.tight_layout()
+fig.savefig("img/stereo-phase.png", dpi=100)
+print("each is a half-height sine:", round(float(np.abs(samples["first"]).max()), 3))
+print("the sum is silent:", bool(np.abs(samples["first + second"]).max() < 1e-9))
+```
+<!-- md-code: id="stereo-phase"; bin="python3" -->
+
+Output:
+```
+each is a half-height sine: 0.5
+the sum is silent: True
+
+```
+<!-- md-code-output: id="stereo-phase" -->
+
+![Two sines half a period apart and their sum](img/stereo-phase.png)
+
+The cancellation happens where the two signals are **added**. Added in one mono
+signal, as `total` is, they give silence. Put one in each stereo channel,
+`StereoExpr(first, second)`, and nothing adds them: your left ear gets the first
+and your right ear gets the second, so you hear a sine in each ear, even though
+the two channels are exactly opposite. They cancel only if something adds them
+afterwards: a mono mix of the file, or two speakers whose sound meets in the air
+at a point equally far from both (a room is never that perfect).
+
+`examples/stereo_phase_cancel.py` plays both cases, 5 seconds each: two sines in
+phase and added, two sines out of phase and added (silence), then the same two
+pairs with one sine per stereo channel.
+
 ## Examples to run
 
-Three short examples, each playing one thing. Use headphones.
+Short examples, each about one idea. Use headphones, except where noted.
 
 ```sh
 python examples/stereo_placed.py       # three plucks: left, centre, right
 python examples/stereo_ping_pong.py    # an echo that bounces between the ears
 python examples/stereo_sweep.py        # a chord that sweeps from ear to ear
+python examples/stereo_phase_cancel.py # two sines that cancel, in mono and in stereo
 ```
 
 - `examples/stereo_placed.py` puts three plucked notes at hard left (`-pi/4`),
   the centre (`0`) and hard right (`pi/4`) with `pan`.
 - `examples/stereo_ping_pong.py` builds a `StereoExpr` by hand, from `delay`
   terms, so the echoes alternate between the ears.
+- `examples/stereo_phase_cancel.py` adds two sines in phase and out of phase,
+  in a mono signal and then one per stereo channel, to hear what cancels.
 - `examples/stereo_sweep.py` pans a held chord with an angle that is itself an
   expression of `TIME`, a slow sine, so it swings across and back.
 

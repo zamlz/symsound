@@ -37,7 +37,10 @@ INTERACTIVE = {"keyboard_synth"}
 STEREO = {"stereo_placed", "stereo_ping_pong", "stereo_sweep"}
 # These have a golden file of everything they play, checked by their own test
 # class, so the generic check of just the first thing played does not apply
-OWN_GOLDEN = {"echo_melody"} | STEREO
+OWN_GOLDEN = {"echo_melody", "stereo_phase_cancel"} | STEREO
+# This one plays silence on purpose (two sines that cancel), so the generic check
+# that an example is audible does not apply to it
+SILENT_PART = {"stereo_phase_cancel"}
 
 
 class Typist:
@@ -90,6 +93,7 @@ def test_every_example_is_covered_by_this_file():
         "house_with_low_pass",
         "keyboard_synth",
         "ode_to_joy",
+        "stereo_phase_cancel",
         "stereo_ping_pong",
         "stereo_placed",
         "stereo_sweep",
@@ -112,7 +116,9 @@ def test_house_does_not_clip(name, fake_sounddevice, tmp_path, monkeypatch):
         assert np.abs(data).max() > 0.9
 
 
-@pytest.mark.parametrize("name", [n for n in SCRIPTS if n not in NOT_PLAYED])
+@pytest.mark.parametrize(
+    "name", [n for n in SCRIPTS if n not in NOT_PLAYED | SILENT_PART]
+)
 def test_example_plays_finite_audible_audio(
     name, fake_sounddevice, tmp_path, monkeypatch
 ):
@@ -1105,3 +1111,110 @@ class TestStereoSweep(StereoExampleChecks):
         # Positive on the right, negative on the left; ignore the faded ends
         signs = np.sign(side[3:-3][np.abs(side[3:-3]) > 0.05])
         assert int((np.diff(signs) != 0).sum()) == 3
+
+
+class TestStereoPhaseCancel:
+    """Two sines that cancel when added in one signal and not when they are
+    split between the ears"""
+
+    NAME = "stereo_phase_cancel"
+    SR = DEFAULT_SAMPLE_RATE
+    SECONDS = 5
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def module(cls):
+        return import_example(cls.NAME)
+
+    @pytest.fixture(scope="class")
+    @classmethod
+    def plays(cls, tmp_path_factory):
+        """Everything the example plays, in order, rendered once"""
+        speaker = Speaker()
+        with pytest.MonkeyPatch.context() as patch:
+            patch.setitem(sys.modules, "sounddevice", speaker)
+            patch.chdir(tmp_path_factory.mktemp(cls.NAME))
+            runpy.run_path(str(EXAMPLES / f"{cls.NAME}.py"), run_name="__main__")
+        return speaker.heard
+
+    @pytest.fixture
+    def versions(self, plays):
+        in_phase, cancelled, split, split_out_of_phase = (data for data, _ in plays)
+        return in_phase, cancelled, split, split_out_of_phase
+
+    @staticmethod
+    def frequency_of(samples, rate):
+        spectrum = np.abs(np.fft.rfft(samples * np.hanning(len(samples)), 1 << 18))
+        return np.argmax(spectrum) * rate / (1 << 18)
+
+    def test_importing_it_plays_nothing(self, fake_sounddevice):
+        import_example(self.NAME)
+        assert fake_sounddevice.plays == []
+
+    def test_it_plays_two_mono_versions_then_two_stereo_ones(self, plays):
+        assert [data.shape for data, _ in plays] == [
+            (self.SECONDS * self.SR,),
+            (self.SECONDS * self.SR,),
+            (self.SECONDS * self.SR, 2),
+            (self.SECONDS * self.SR, 2),
+        ]
+        assert {rate for _, rate in plays} == {self.SR}
+
+    def test_a_phase_shift_of_half_a_period_is_180_degrees(self, module):
+        assert module["HALF_A_PERIOD"] == pytest.approx(1 / (2 * module["FREQUENCY"]))
+
+    def test_two_sines_in_phase_add_up_to_one_sine(self, versions):
+        t = linspace(self.SECONDS, self.SR)
+        np.testing.assert_allclose(versions[0], np.sin(2 * np.pi * 440 * t), atol=1e-9)
+
+    def test_the_summed_sine_has_the_right_pitch_and_peak(self, versions):
+        assert self.frequency_of(versions[0], self.SR) == pytest.approx(440, abs=0.5)
+        assert np.abs(versions[0]).max() == pytest.approx(1.0, abs=1e-3)
+
+    def test_two_sines_out_of_phase_cancel_to_silence(self, versions):
+        # The sum is zero up to rounding error, not just quiet
+        assert np.abs(versions[1]).max() < 1e-9
+
+    def test_what_cancels_is_not_silent_on_its_own(self, module):
+        # The shifted sine is a full 440 Hz wave: it is the sum that vanishes
+        t = linspace(self.SECONDS, self.SR)
+        first = evaluate(module["first"], t)
+        second = evaluate(module["second_out_of_phase"], t)
+        assert np.abs(first).max() == pytest.approx(0.5, abs=1e-3)
+        assert np.abs(second).max() == pytest.approx(0.5, abs=1e-3)
+        np.testing.assert_allclose(second, -first, atol=1e-9)
+
+    def test_in_phase_the_channels_are_identical(self, versions):
+        np.testing.assert_allclose(versions[2][:, 0], versions[2][:, 1], atol=1e-12)
+
+    def test_out_of_phase_the_right_channel_is_the_left_upside_down(self, versions):
+        left, right = versions[3][:, 0], versions[3][:, 1]
+        np.testing.assert_allclose(right, -left, atol=1e-9)
+
+    @pytest.mark.parametrize("version", [2, 3])
+    @pytest.mark.parametrize("channel", [0, 1])
+    def test_each_stereo_channel_is_a_half_height_440_hz_sine(
+        self, versions, version, channel
+    ):
+        samples = versions[version][:, channel]
+        assert np.abs(samples).max() == pytest.approx(0.5, abs=1e-3)
+        assert self.frequency_of(samples, self.SR) == pytest.approx(440, abs=0.5)
+
+    def test_out_of_phase_stereo_is_not_silent_in_either_ear(self, versions):
+        for channel in (0, 1):
+            rms = np.sqrt((versions[3][:, channel] ** 2).mean())
+            assert rms == pytest.approx(0.5 / 2**0.5, rel=1e-3)
+
+    def test_it_would_cancel_only_if_the_channels_were_added(self, versions):
+        # A mono mix of the out-of-phase stereo version is silent; of the
+        # in-phase one it is as loud as the two together
+        assert np.abs(versions[3].sum(axis=1)).max() < 1e-9
+        assert np.abs(versions[2].sum(axis=1)).max() == pytest.approx(1.0, abs=1e-3)
+
+    def test_nothing_clips_or_goes_missing(self, plays):
+        for data, _ in plays:
+            assert np.isfinite(data).all()
+            assert np.abs(data).max() <= 1.0 + 1e-9
+
+    def test_the_sound_has_not_changed(self, plays):
+        check_golden(self.NAME, np.concatenate([data.ravel() for data, _ in plays]))
