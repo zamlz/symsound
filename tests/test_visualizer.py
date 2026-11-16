@@ -18,9 +18,9 @@ import sympy as sp
 from hypothesis import given
 from hypothesis import strategies as st
 
-import daw
-from daw import visualizer
-from daw._draw import (
+import symsound
+from symsound import visualizer
+from symsound._draw import (
     MARGIN,
     PIXELS_PER_COLUMN,
     PLAYED,
@@ -31,9 +31,9 @@ from daw._draw import (
     _inside,
     _run,
 )
-from daw.analysis import HOP, row_of_frequency
-from daw.live import Player
-from daw.visualizer import (
+from symsound.analysis import HOP, row_of_frequency
+from symsound.live import Player
+from symsound.visualizer import (
     _format_time,
     _layout_for,
     _seek_fraction,
@@ -41,9 +41,9 @@ from daw.visualizer import (
     snapshot,
     visualize,
 )
-from daw.waves.basic import sine
-from daw.waves.time import TIME
-from daw.waves.utils import compile
+from symsound.waves.basic import sine
+from symsound.waves.time import TIME
+from symsound.waves.utils import compile
 
 RATE = 8000
 SECONDS = 4.0
@@ -566,7 +566,7 @@ class TestSnapshot:
         )
 
     def test_a_filtered_signal_works_because_it_is_compiled_whole(self, tmp_path):
-        from daw.filters import low_pass_filter
+        from symsound.filters import low_pass_filter
 
         snapshot(low_pass_filter(sine(2000), 300), 2.0, 1.0, tmp_path / "f.png", RATE)
         assert (tmp_path / "f.png").exists()
@@ -746,19 +746,20 @@ class TestOptionalDependency:
     ):
         import importlib
 
-        from daw import _draw
+        from symsound import _draw
 
         monkeypatch.setitem(sys.modules, "pygame", None)
-        with pytest.raises(ImportError, match=r"daw\[gui\]"):
+        with pytest.raises(ImportError, match=r"symsound\[gui\]"):
             importlib.reload(_draw)
 
     def test_the_rest_of_the_package_never_imports_pygame(self):
         code = (
             "import sys\n"
-            "import daw.live, daw.analysis, daw.waves.utils, daw.filters\n"
+            "import symsound.live, symsound.analysis\n"
+            "import symsound.waves.utils, symsound.filters\n"
             "print('pygame' in sys.modules)\n"
         )
-        src = str(Path(daw.__file__).resolve().parents[1])
+        src = str(Path(symsound.__file__).resolve().parents[1])
         env = dict(os.environ)
         env["PYTHONPATH"] = os.pathsep.join(filter(None, [src, env.get("PYTHONPATH")]))
         result = subprocess.run(
@@ -771,8 +772,8 @@ class TestOptionalDependency:
         assert result.stdout.strip() == "False"
 
     def test_the_library_does_not_print_pygames_banner(self):
-        code = "import daw.visualizer\n"
-        src = str(Path(daw.__file__).resolve().parents[1])
+        code = "import symsound.visualizer\n"
+        src = str(Path(symsound.__file__).resolve().parents[1])
         env = dict(os.environ)
         env["PYTHONPATH"] = os.pathsep.join(filter(None, [src, env.get("PYTHONPATH")]))
         env.pop("PYGAME_HIDE_SUPPORT_PROMPT", None)

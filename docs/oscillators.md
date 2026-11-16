@@ -6,7 +6,7 @@
 - [Trigger](#trigger)
 <!-- md-toc: end -->
 
-An oscillator is a repeating wave. All of them live in `daw.waves.basic` and
+An oscillator is a repeating wave. All of them live in `symsound.waves.basic` and
 all take the same two arguments:
 
 - `frequency`: how many cycles per second, as a number or an expression.
@@ -16,8 +16,8 @@ Here are the four at 3 Hz (slow enough to see; at audio frequencies they look
 the same, only faster):
 
 ```python
-from daw.waves.basic import sawtooth, sine, square, triangle
-from daw.waves.utils import plot
+from symsound.waves.basic import sawtooth, sine, square, triangle
+from symsound.waves.utils import plot
 
 plot(
     [sine(3), square(3), triangle(3), sawtooth(3)],
@@ -45,8 +45,8 @@ frequency. The others add more, and the spectrogram makes that visible: each
 bright line is a harmonic.
 
 ```python
-from daw.waves.basic import sawtooth, sine, square, triangle
-from daw.waves.utils import spectrogram
+from symsound.waves.basic import sawtooth, sine, square, triangle
+from symsound.waves.utils import spectrogram
 
 for name, wave in [("sine", sine), ("square", square),
                    ("triangle", triangle), ("sawtooth", sawtooth)]:
@@ -69,13 +69,13 @@ approximation that overshoots (see [Gotchas](gotchas.md)); prefer `sawtooth`.
 
 ## Notes
 
-`daw.constants.Note` is a table of equal-tempered pitches in Hz, from `A0`
+`symsound.constants.Note` is a table of equal-tempered pitches in Hz, from `A0`
 (27.5 Hz) to `C8`. Sharps are written `AS4` (A sharp 4), `FS4` and so on.
 Notes are plain floats, so you can do arithmetic with them:
 
 ```python
-from daw.constants import Note
-from daw.waves.basic import sine
+from symsound.constants import Note
+from symsound.waves.basic import sine
 
 print(Note.A4.value, Note.C4.value, Note.C5.value)   # in Hz
 print(Note.C4 * 2)       # doubling the frequency is an octave up: about C5
@@ -99,8 +99,8 @@ vibrato and frequency modulation (FM) work. A spectrogram shows the pitch
 directly: time across, frequency up.
 
 ```python
-from daw.waves.basic import sine
-from daw.waves.utils import spectrogram
+from symsound.waves.basic import sine
+from symsound.waves.utils import spectrogram
 
 vibrato = sine(440 + 40 * sine(2))      # 440 Hz, wobbling +-40 Hz twice a second
 spectrogram(vibrato, duration=2.0, max_frequency=900,
@@ -112,8 +112,8 @@ spectrogram(vibrato, duration=2.0, max_frequency=900,
 ![The pitch wobbling around 440 Hz](img/oscillators-vibrato.png)
 
 ```python
-from daw.waves.basic import sine
-from daw.waves.utils import spectrogram
+from symsound.waves.basic import sine
+from symsound.waves.utils import spectrogram
 
 siren = sine(440 + 200 * sine(0.5))     # slow sweep between 240 and 640 Hz
 spectrogram(siren, duration=4.0, max_frequency=900,
@@ -133,8 +133,8 @@ follows the expression. Keep the frequency positive.
 for starting or stopping things:
 
 ```python
-from daw.waves.basic import sine, trigger
-from daw.waves.utils import plot
+from symsound.waves.basic import sine, trigger
+from symsound.waves.utils import plot
 
 starts_at_one_second = trigger(1.0) * sine(5)
 stops_at_one_second = (1 - trigger(1.0)) * sine(5)

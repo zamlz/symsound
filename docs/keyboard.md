@@ -11,12 +11,12 @@
 
 `keyboard` turns a signal into an instrument you play with the keys of your
 computer. You give it a function from a `Note` to a signal, and it opens a window
-with a piano, a scope and a spectrogram. It needs pygame (`pip install 'daw[gui]'`).
+with a piano, a scope and a spectrogram. It needs pygame (`pip install 'symsound[gui]'`).
 
 ```python no-run
-from daw.envelope import adsr_envelope
-from daw.keyboard import keyboard
-from daw.waves.basic import sine
+from symsound.envelope import adsr_envelope
+from symsound.keyboard import keyboard
+from symsound.waves.basic import sine
 
 def pluck(note):
     return (sine(note) + 0.3 * sine(2 * note)) * adsr_envelope(0.01, 0.1, 0.6, 0.4)
@@ -30,10 +30,10 @@ frequency in Hz. Here is the window with a C major chord held down for three
 seconds:
 
 ```python
-from daw.constants import Note
-from daw.envelope import adsr_envelope
-from daw.keyboard import keyboard_snapshot
-from daw.waves.basic import sine
+from symsound.constants import Note
+from symsound.envelope import adsr_envelope
+from symsound.keyboard import keyboard_snapshot
+from symsound.waves.basic import sine
 
 def pluck(note):
     return (sine(note) + 0.3 * sine(2 * note)) * adsr_envelope(0.01, 0.1, 0.6, 0.4)
@@ -137,7 +137,7 @@ octave (or `None` past the end of the table) and `note_name` writes a note the w
 a musician does:
 
 ```python
-from daw.keyboard import note_at, note_name
+from symsound.keyboard import note_at, note_name
 
 print(note_at(4, 0), "->", note_name(note_at(4, 0)))     # the home row's first key
 print(note_at(4, 9), "->", note_name(note_at(4, 9)), note_at(4, 9).value, "Hz")
@@ -158,7 +158,7 @@ None
 
 ## The live spectrogram
 
-The spectrogram under the scope is a `LiveSpectrogram` from `daw.analysis`. It
+The spectrogram under the scope is a `LiveSpectrogram` from `symsound.analysis`. It
 looks at a `RingBuffer` that the speakers' callback fills, and each time you call
 `update` it adds a column for every 512 samples that arrived since last time. The
 result is exactly what `spectrogram_columns` gives for the same sound, however the
@@ -167,8 +167,8 @@ samples arrived:
 ```python
 import numpy as np
 
-from daw.analysis import LiveSpectrogram, spectrogram_columns
-from daw.live import RingBuffer
+from symsound.analysis import LiveSpectrogram, spectrogram_columns
+from symsound.live import RingBuffer
 
 rate = 8000
 t = np.arange(rate) / rate

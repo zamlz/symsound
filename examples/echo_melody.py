@@ -10,11 +10,11 @@ Each version plays in turn, so you can hear what the copies add.
 
 import numpy as np
 
-from daw.constants import Note
-from daw.effects import delay
-from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.waves.basic import sine
-from daw.waves.utils import compile, play
+from symsound.constants import Note
+from symsound.effects import delay
+from symsound.envelope import ACTIVE_DURATION, adsr_envelope
+from symsound.waves.basic import sine
+from symsound.waves.utils import compile, play
 
 pluck = adsr_envelope(0.005, 0.25, 0.0, 0.1).subs(ACTIVE_DURATION, 0.01)
 

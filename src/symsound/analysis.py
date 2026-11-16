@@ -122,7 +122,7 @@ def peak_envelope(samples: npt.ArrayLike, width: int) -> tuple[Samples, Samples]
 
 
 class _Stream(Protocol):
-    """What `LiveSpectrogram` reads: a `daw.live.RingBuffer` is one"""
+    """What `LiveSpectrogram` reads: a `symsound.live.RingBuffer` is one"""
 
     capacity: int
 

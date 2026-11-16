@@ -25,11 +25,11 @@ import numpy.typing as npt
 import sympy as sp
 from sympy.core.expr import Expr
 
-from daw.constants import DEFAULT_SAMPLE_RATE, Note
-from daw.envelope import ACTIVE_DURATION
-from daw.filters import LowPass
-from daw.waves.time import TIME
-from daw.waves.utils import WHITE_NOISE
+from symsound.constants import DEFAULT_SAMPLE_RATE, Note
+from symsound.envelope import ACTIVE_DURATION
+from symsound.filters import LowPass
+from symsound.waves.time import TIME
+from symsound.waves.utils import WHITE_NOISE
 
 # While a key is down the note has no end yet. `active_duration` is set to
 # this, which is far later than any note, so an envelope stays in its sustain

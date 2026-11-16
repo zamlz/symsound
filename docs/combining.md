@@ -20,8 +20,8 @@ Add signals, and scale each to set its level. The weights should add up to
 about 1 or less so the mix does not clip:
 
 ```python
-from daw.waves.basic import sawtooth, sine, square
-from daw.waves.utils import plot
+from symsound.waves.basic import sawtooth, sine, square
+from symsound.waves.utils import plot
 
 parts = [0.6 * sine(2), 0.3 * square(5), 0.1 * sawtooth(11)]
 mix = sum(parts)
@@ -39,8 +39,8 @@ Multiply by something that is 1 (let through) or 0 (silence). `square` runs
 between -1 and 1, so `(square + 1) / 2` runs between 0 and 1:
 
 ```python
-from daw.waves.basic import sawtooth, square
-from daw.waves.utils import plot
+from symsound.waves.basic import sawtooth, square
+from symsound.waves.utils import plot
 
 gate = (square(8) + 1) / 2          # on for half of each cycle, 8 cycles a second
 gated = sawtooth(40) * gate
@@ -62,8 +62,8 @@ bends it: a large power makes the sound die away quickly after each hit, a power
 below 1 makes it linger and then drop.
 
 ```python
-from daw.waves.basic import sawtooth
-from daw.waves.utils import plot
+from symsound.waves.basic import sawtooth
+from symsound.waves.utils import plot
 
 ramp = (1 - sawtooth(1)) / 2         # 1 falling to 0 over each second
 plot([ramp, ramp ** 0.5, ramp ** 2, ramp ** 20], duration=2.0,
@@ -86,9 +86,9 @@ true condition wins and `True` means "otherwise". Join conditions with
 ```python
 import sympy as sp
 
-from daw.waves.basic import sine
-from daw.waves.time import TIME
-from daw.waves.utils import plot
+from symsound.waves.basic import sine
+from symsound.waves.time import TIME
+from symsound.waves.utils import plot
 
 fade_in = sp.Piecewise(
     (TIME / 2, TIME <= 2),      # rises from 0 to 1 over two seconds
@@ -111,8 +111,8 @@ that is 0 everywhere else. This is the heart of `house_with_low_pass.py`:
 ```python
 import sympy as sp
 
-from daw.waves.time import TIME
-from daw.waves.utils import plot
+from symsound.waves.time import TIME
+from symsound.waves.utils import plot
 
 start, length = 2.0, 4.0
 bump = sp.Piecewise(
@@ -141,10 +141,10 @@ sawtooth through a low-pass filter, and `wet` is the bump above:
 ```python
 import sympy as sp
 
-from daw.filters import low_pass_filter
-from daw.waves.basic import sawtooth
-from daw.waves.time import TIME
-from daw.waves.utils import spectrogram
+from symsound.filters import low_pass_filter
+from symsound.waves.basic import sawtooth
+from symsound.waves.time import TIME
+from symsound.waves.utils import spectrogram
 
 start, length = 2.0, 4.0
 wet = sp.Piecewise(
@@ -187,8 +187,8 @@ fully there for most of the bump:
 ```python
 import sympy as sp
 
-from daw.waves.time import TIME
-from daw.waves.utils import plot
+from symsound.waves.time import TIME
+from symsound.waves.utils import plot
 
 start, length = 2.0, 4.0
 bump = sp.Piecewise(

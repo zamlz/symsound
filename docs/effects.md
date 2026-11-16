@@ -9,7 +9,7 @@
 - [Under the hood](#under-the-hood)
 <!-- md-toc: end -->
 
-`daw.effects.delay(signal, seconds)` is a signal, later: the sound as it was
+`symsound.effects.delay(signal, seconds)` is a signal, later: the sound as it was
 `seconds` ago, and silence until then. It is the one building block. An echo is
 a few delayed copies of a sound laid on top of it at even spacings, and a
 reverb is thousands at irregular spacings. This page builds both from `delay`,
@@ -20,10 +20,10 @@ as ordinary expressions, with no processing hidden behind them.
 ```python
 import sympy as sp
 
-from daw.effects import delay
-from daw.waves.basic import sine
-from daw.waves.time import TIME
-from daw.waves.utils import plot
+from symsound.effects import delay
+from symsound.waves.basic import sine
+from symsound.waves.time import TIME
+from symsound.waves.utils import plot
 
 # A short beep: 500 Hz for 50 ms, silent either side
 beep = sine(500) * sp.Piecewise((1, (TIME >= 0) & (TIME < 0.05)), (0, True))
@@ -56,10 +56,10 @@ one before. A short function builds it out of `delay`:
 ```python
 import sympy as sp
 
-from daw.effects import delay
-from daw.waves.basic import sine
-from daw.waves.time import TIME
-from daw.waves.utils import compile, plot
+from symsound.effects import delay
+from symsound.waves.basic import sine
+from symsound.waves.time import TIME
+from symsound.waves.utils import compile, plot
 
 
 def echo(signal, spacing, feedback, repeats):
@@ -116,10 +116,10 @@ different spacings, written out as delays.
 import numpy as np
 import sympy as sp
 
-from daw.effects import delay
-from daw.waves.basic import sine
-from daw.waves.time import TIME
-from daw.waves.utils import compile, plot
+from symsound.effects import delay
+from symsound.waves.basic import sine
+from symsound.waves.time import TIME
+from symsound.waves.utils import compile, plot
 
 # Eight spacings, in seconds, with no common factor so the copies never line
 # up into a single ringing pitch
@@ -169,10 +169,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sympy as sp
 
-from daw.effects import delay
-from daw.waves.basic import sine
-from daw.waves.time import TIME
-from daw.waves.utils import compile
+from symsound.effects import delay
+from symsound.waves.basic import sine
+from symsound.waves.time import TIME
+from symsound.waves.utils import compile
 
 SPACINGS = (0.0253, 0.0269, 0.0289, 0.0307, 0.0322, 0.0338, 0.0353, 0.0367)
 
@@ -228,11 +228,11 @@ The echo and the reverb are signals, so everything in these docs applies. Put
 a reverb on a whole song and it is one expression, compiled once at the end:
 
 ```python
-from daw.constants import Note
-from daw.effects import delay
-from daw.envelope import ACTIVE_DURATION, adsr_envelope
-from daw.waves.basic import sine
-from daw.waves.utils import compile
+from symsound.constants import Note
+from symsound.effects import delay
+from symsound.envelope import ACTIVE_DURATION, adsr_envelope
+from symsound.waves.basic import sine
+from symsound.waves.utils import compile
 
 pluck = adsr_envelope(0.005, 0.3, 0.0, 0.1).subs(ACTIVE_DURATION, 0.01)
 chord = (sine(Note.C4) + sine(Note.E4) + sine(Note.G4)) / 3 * pluck

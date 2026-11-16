@@ -39,7 +39,7 @@
   {
     devShells = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
-      # Lets the scripts in examples/ import the daw package
+      # Lets the scripts in examples/ import the symsound package
       shellHook = ''
         export PYTHONPATH="$PWD/src''${PYTHONPATH:+:$PYTHONPATH}"
       '';
@@ -66,7 +66,7 @@
     checks = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
       # Run $script in a writable copy of the repo
-      mkCheckWith = extraInputs: name: script: pkgs.runCommand "daw-${name}" {
+      mkCheckWith = extraInputs: name: script: pkgs.runCommand "symsound-${name}" {
         nativeBuildInputs = [ (pythonEnv pkgs) pkgs.ruff ] ++ extraInputs;
         # Reproducible property-based tests (see tests/conftest.py)
         HYPOTHESIS_PROFILE = "ci";
@@ -80,7 +80,7 @@
     in {
       pytest = mkCheck "pytest" "pytest -q -p no:cacheprovider";
       ruff = mkCheck "ruff" "ruff check --no-cache . && ruff format --check --no-cache tests";
-      mypy = mkCheck "mypy" "mypy --cache-dir=/dev/null src/daw";
+      mypy = mkCheck "mypy" "mypy --cache-dir=/dev/null src/symsound";
       # Re-runs every code block in docs/ and fails if the committed output or
       # graphs differ (fix with: python tools/build_docs.py)
       docs = mkCheckWith [ mdutils.packages.${system}.default ] "docs" ''

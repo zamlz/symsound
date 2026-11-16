@@ -288,7 +288,7 @@ class TestBuildDocsTool:
     def test_the_readme_is_built_with_the_docs_from_the_repository_root(
         self, tool, tmp_path
     ):
-        docs = self.readme_tree(tmp_path, "# daw\n")
+        docs = self.readme_tree(tmp_path, "# symsound\n")
         pages = tool.pages_of(docs)
         assert [(page.name, folder) for page, folder in pages] == [
             ("p.md", docs),

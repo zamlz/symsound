@@ -41,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/nix
-      - run: nix develop .#ci -c mypy src/daw
+      - run: nix develop .#ci -c mypy src/symsound
 
   tests:
     name: Tests and coverage (pytest)

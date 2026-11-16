@@ -7,7 +7,7 @@ import sympy as sp
 from hypothesis import given
 from hypothesis import strategies as st
 
-from daw.waves.time import BPM, TIME
+from symsound.waves.time import BPM, TIME
 
 bpms = st.floats(min_value=1, max_value=400, allow_nan=False)
 beats = st.floats(min_value=-64, max_value=64, allow_nan=False)

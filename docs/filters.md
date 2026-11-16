@@ -9,15 +9,15 @@
 - [Under the hood](#under-the-hood)
 <!-- md-toc: end -->
 
-`daw.filters.low_pass_filter(signal, cutoff)` removes the high-frequency part of
+`symsound.filters.low_pass_filter(signal, cutoff)` removes the high-frequency part of
 a sound and keeps the low part. The higher a frequency is above the cutoff, the
 more it is turned down. It is the "muffled" sound: a hand over a speaker, music
 heard through a wall.
 
 ```python
-from daw.filters import low_pass_filter
-from daw.waves.basic import sawtooth
-from daw.waves.utils import plot
+from symsound.filters import low_pass_filter
+from symsound.waves.basic import sawtooth
+from symsound.waves.utils import plot
 
 bright = sawtooth(110)
 dull = low_pass_filter(bright, 500)    # keep what is below roughly 500 Hz
@@ -40,9 +40,9 @@ sawtooth is a harmonic of 110 Hz. The filter leaves the low ones and fades the
 high ones:
 
 ```python
-from daw.filters import low_pass_filter
-from daw.waves.basic import sawtooth
-from daw.waves.utils import spectrogram
+from symsound.filters import low_pass_filter
+from symsound.waves.basic import sawtooth
+from symsound.waves.utils import spectrogram
 
 bright = sawtooth(110)
 spectrogram(bright, duration=1.0, max_frequency=4000,
@@ -68,9 +68,9 @@ dashed lines mark the cutoff (500 Hz) and 70%.
 import matplotlib.pyplot as plt
 import numpy as np
 
-from daw.filters import low_pass_filter
-from daw.waves.basic import sine
-from daw.waves.utils import compile
+from symsound.filters import low_pass_filter
+from symsound.waves.basic import sine
+from symsound.waves.utils import compile
 
 cutoff = 500
 frequencies = np.geomspace(20, 20000, 25)
@@ -106,8 +106,8 @@ That is -20 dB per decade, a gradual roll-off rather than a wall. Filtering
 twice makes it steeper:
 
 ```python
-from daw.filters import low_pass_filter
-from daw.waves.basic import sawtooth
+from symsound.filters import low_pass_filter
+from symsound.waves.basic import sawtooth
 
 steeper = low_pass_filter(low_pass_filter(sawtooth(110), 500), 500)
 ```
@@ -123,8 +123,8 @@ output eases up towards it. The lower the cutoff, the slower it gets there:
 ```python
 import sympy as sp
 
-from daw.filters import low_pass_filter
-from daw.waves.utils import plot
+from symsound.filters import low_pass_filter
+from symsound.waves.utils import plot
 
 jump = sp.Integer(1)
 cutoffs = [10, 40, 160]
@@ -149,8 +149,8 @@ to see:
 ```python
 import numpy as np
 
-from daw.filters import low_pass_filter
-from daw.waves.utils import WHITE_NOISE, spectrogram
+from symsound.filters import low_pass_filter
+from symsound.waves.utils import WHITE_NOISE, spectrogram
 
 np.random.seed(0)
 spectrogram(WHITE_NOISE, duration=1.0, max_frequency=8000, title="WHITE_NOISE",
@@ -173,9 +173,9 @@ The cutoff may itself be a signal, so the filter can sweep. The cutoff
 expression must stay above zero:
 
 ```python
-from daw.filters import low_pass_filter
-from daw.waves.basic import sawtooth, sine
-from daw.waves.utils import spectrogram
+from symsound.filters import low_pass_filter
+from symsound.waves.basic import sawtooth, sine
+from symsound.waves.utils import spectrogram
 
 wah = low_pass_filter(sawtooth(110), 800 + 600 * sine(2))   # 200 to 1400 Hz, twice a second
 spectrogram(wah, duration=2.0, max_frequency=4000,
