@@ -8,7 +8,7 @@
   - [An angle with no limit](#an-angle-with-no-limit)
 - [Effects on both sides: `map`](#effects-on-both-sides-map)
 - [Looking at a stereo signal](#looking-at-a-stereo-signal)
-- [An example to run](#an-example-to-run)
+- [Examples to run](#examples-to-run)
 - [The limits](#the-limits)
 <!-- md-toc: end -->
 
@@ -348,16 +348,22 @@ spectrogram(pair, duration=1.0, channel="right", max_frequency=2000,
 
 ![The spectrogram of the right channel](img/stereo-spectrogram.png)
 
-## An example to run
+## Examples to run
 
-`examples/stereo_pan.py` plays three short versions in turn: three plucked notes
-placed hard left, centre and hard right with `pan`, an echo that bounces from ear
-to ear, and a held chord whose pan angle follows `pi/4 * sine(0.5)` so it sweeps across
-and back. Use headphones.
+Three short examples, each playing one thing. Use headphones.
 
 ```sh
-python examples/stereo_pan.py
+python examples/stereo_placed.py       # three plucks: left, centre, right
+python examples/stereo_ping_pong.py    # an echo that bounces between the ears
+python examples/stereo_sweep.py        # a chord that sweeps from ear to ear
 ```
+
+- `examples/stereo_placed.py` puts three plucked notes at hard left (`-pi/4`),
+  the centre (`0`) and hard right (`pi/4`) with `pan`.
+- `examples/stereo_ping_pong.py` builds a `StereoExpr` by hand, from `delay`
+  terms, so the echoes alternate between the ears.
+- `examples/stereo_sweep.py` pans a held chord with an angle that is itself an
+  expression of `TIME`, a slow sine, so it swings across and back.
 
 ## The limits
 

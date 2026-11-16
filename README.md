@@ -88,7 +88,9 @@ python examples/house_with_low_pass.py
 python examples/ode_to_joy.py
 python examples/echo_pulse.py       # asks how many seconds between the echoes
 python examples/echo_melody.py      # three plucks: dry, with an echo, in a room
-python examples/stereo_pan.py       # three plucks placed left, centre and right; a bouncing echo; a sweep
+python examples/stereo_placed.py     # three plucks: left, centre, right
+python examples/stereo_ping_pong.py  # an echo that bounces between the ears
+python examples/stereo_sweep.py      # a chord that sweeps from ear to ear
 python examples/keyboard_synth.py   # a playable instrument (needs the gui extra)
 ```
 
