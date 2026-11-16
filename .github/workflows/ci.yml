@@ -67,6 +67,22 @@ jobs:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/nix
       - run: nix develop -c python tools/build_docs.py --check
+      # Graphs drawn on another machine can differ from the ones drawn here by a
+      # pixel or two, and then the check fails. When it fails, rebuild the docs on
+      # this runner and keep them, so the images that match can be committed:
+      #   gh run download <run id> -n rebuilt-docs
+      - name: Rebuild the docs on this runner
+        if: failure()
+        run: nix develop -c python tools/build_docs.py
+      - name: Keep the rebuilt docs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rebuilt-docs
+          path: |
+            README.md
+            docs
+          retention-days: 7
 
   flake:
     name: Flake evaluates
