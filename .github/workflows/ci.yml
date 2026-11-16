@@ -73,9 +73,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/nix
-      # Evaluates every output without building any: the checks it defines are
-      # the same tools the jobs above run
-      - run: nix flake check --no-build
+      # Evaluates each check the flake defines (the ones `nix flake check` runs
+      # locally) without running it: the same tools the jobs above run. Not
+      # `nix flake check --no-build`: md is built with naersk, which has to build
+      # its source while evaluating
+      - run: |
+          for check in pytest ruff mypy docs; do
+            nix eval --raw ".#checks.x86_64-linux.$check.drvPath"
+            echo
+          done
 
   check:
     runs-on: ubuntu-latest
